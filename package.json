@@ -1,6 +1,6 @@
 {
   "name": "neuropulse-focus",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "NeuroPulse — 轻量级反应力与专注力训练桌面小游戏 (React + TailwindCSS + Three.js + Electron + Python + SQLite)",
   "private": true,
   "main": "dist-electron/main.js",
@@ -15,9 +15,9 @@
     "build:backend": "node scripts/build-backend.mjs",
     "build": "pnpm run build:frontend && pnpm run build:electron",
     "start:electron": "pnpm run build:electron && electron .",
-    "pack:mac": "pnpm run build && pnpm run build:backend && electron-builder --mac --dir",
-    "dist:mac": "pnpm run build && pnpm run build:backend && electron-builder --mac",
-    "dist:win": "pnpm run build && pnpm run build:backend && electron-builder --win"
+    "pack:mac": "pnpm run build && pnpm run build:backend && electron-builder --mac --dir --publish never",
+    "dist:mac": "pnpm run build && pnpm run build:backend && electron-builder --mac --publish never",
+    "dist:win": "pnpm run build && pnpm run build:backend && electron-builder --win --publish never"
   },
   "devDependencies": {
     "electron": "^35.1.5",

@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag name (e.g. v1.1.0). Leave empty to use package.json version."
+        description: "Release tag name (e.g. v1.1.1). Leave empty to use package.json version."
         required: false
         default: ""
   push:
@@ -38,10 +38,19 @@ jobs:
         working-directory: backend
         run: .venv/bin/pytest -v
 
-      - name: Install Node dependencies & build macOS installer
-        run: |
-          pnpm run install:all
-          pnpm run dist:mac
+      - name: Install Node dependencies
+        run: pnpm run install:all
+
+      - name: Build frontend & Electron
+        run: pnpm run build
+
+      - name: Build Python sidecar
+        run: pnpm run build:backend
+
+      - name: Package macOS installer
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --mac --publish never
 
       - name: Upload macOS build artifacts
         uses: actions/upload-artifact@v4
@@ -76,11 +85,23 @@ jobs:
         working-directory: backend
         run: .venv/Scripts/pytest.exe -v
 
-      - name: Install Node dependencies & build Windows 11 installer
+      - name: Install Node dependencies
         shell: pwsh
-        run: |
-          pnpm run install:all
-          pnpm run dist:win
+        run: pnpm run install:all
+
+      - name: Build frontend & Electron
+        shell: pwsh
+        run: pnpm run build
+
+      - name: Build Python sidecar
+        shell: pwsh
+        run: pnpm run build:backend
+
+      - name: Package Windows 11 installer
+        shell: pwsh
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: "false"
+        run: pnpm exec electron-builder --win --publish never
 
       - name: Upload Windows 11 build artifacts
         uses: actions/upload-artifact@v4
@@ -130,7 +151,7 @@ jobs:
 
           开箱即用、零环境依赖、全离线可用的反应力与专注力训练工具，内置 4 大核心训练场景：
           - **场景 1**：双物听觉反应 + 中途「请换手」5 秒倒计时 + Three.js 3D 轨道互换
-          - **场景 2**：Stroop 色词抗干扰挑战（含规则动态切换与语音干扰）
+          - **场景 2**：Stroop 色词抗干扰挑战（含高对比度「看颜色 / 看字义」双灯切换提示与语音干扰）
           - **场景 3**：3D 多球视觉追踪 (MOT)（Three.js 三维碰撞 + 鼠标直接拾取）
           - **场景 4**：听觉 Go / No-Go 急停反射训练（自定义词库 + 毫秒级反应拍击）
 

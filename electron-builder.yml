@@ -1,6 +1,7 @@
 appId: com.neuropulse.focus
 productName: NeuroPulse
 copyright: Copyright © 2026 NeuroPulse Studio
+publish: null
 directories:
   output: release
   buildResources: build-resources
