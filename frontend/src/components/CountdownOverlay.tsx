@@ -25,20 +25,20 @@ export const CountdownOverlay: React.FC<CountdownOverlayProps> = ({
   const dashOffset = circumference * Math.min(1, Math.max(0, progress));
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/65 backdrop-blur-md">
-      <div className="relative flex flex-col items-center px-10 py-9 rounded-3xl border border-amber-400/40 bg-slate-900/90 shadow-[0_0_80px_-15px_rgba(249,115,22,0.55)] max-w-lg w-[92%] text-center">
+    <div className="fixed inset-0 z-40 flex items-center justify-center bg-slate-950/70 backdrop-blur-md p-4">
+      <div className="relative flex flex-col items-center px-5 py-6 sm:px-10 sm:py-9 rounded-3xl border border-amber-400/40 bg-slate-900/92 shadow-[0_0_80px_-15px_rgba(249,115,22,0.55)] max-w-lg w-full text-center">
         {/* Badge */}
-        <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 border border-amber-400/40 px-4 py-1.5 text-amber-300 text-xs font-bold tracking-widest uppercase mb-5">
+        <div className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 border border-amber-400/40 px-3.5 py-1.5 text-amber-300 text-xs font-bold tracking-wider uppercase mb-4 sm:mb-5">
           <ArrowLeftRight className="w-4 h-4 animate-pulse" />
           <span>换手准备阶段 · 倒计时 {totalCountdownSec} 秒</span>
         </div>
 
         {/* Concentric Uiverse Radar + SVG Ring */}
-        <div className="relative flex items-center justify-center w-52 h-52 my-1">
+        <div className="relative flex items-center justify-center w-44 h-44 sm:w-52 sm:h-52 my-1">
           <div className="absolute inset-4 rounded-full border-2 border-amber-400/45 ui-swap-radar" />
           <div className="absolute inset-4 rounded-full border-2 border-orange-500/35 ui-swap-radar--delayed" />
 
-          <svg className="w-52 h-52 -rotate-90" viewBox="0 0 200 200">
+          <svg className="w-44 h-44 sm:w-52 sm:h-52 -rotate-90" viewBox="0 0 200 200">
             <circle
               cx="100"
               cy="100"

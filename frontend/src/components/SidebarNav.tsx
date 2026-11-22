@@ -87,7 +87,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   const todayMin = Math.round((stats?.today_focus_sec ?? 0) / 60);
 
   return (
-    <aside className="w-64 shrink-0 h-full flex flex-col border-r border-slate-800/80 bg-[#090F1E]/95 backdrop-blur-xl select-none">
+    <aside className="hidden md:flex w-64 shrink-0 h-full flex-col border-r border-slate-800/80 bg-[#090F1E]/95 backdrop-blur-xl select-none">
       {/* Draggable header with macOS traffic light clearance */}
       <div className={`ui-drag-region px-5 ${isMac ? "pt-11" : "pt-5"} pb-4 border-b border-slate-800/70`}>
         <div className="flex items-center gap-3">
@@ -208,7 +208,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
             />
             <Cpu className="w-3.5 h-3.5 text-slate-500 shrink-0" />
             <span className="text-slate-400 truncate">
-              {health ? "Python + SQLite 已就绪" : "正在连接本地服务..."}
+              {health
+                ? health.db_path === "local-offline"
+                  ? "本地离线引擎已就绪"
+                  : "Python + SQLite 已就绪"
+                : "正在连接本地服务..."}
             </span>
           </div>
           {window.neuropulse?.openDataFolder && (

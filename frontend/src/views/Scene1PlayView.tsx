@@ -20,6 +20,7 @@ import { CountdownOverlay } from "../components/CountdownOverlay";
 import { PushButton } from "../components/uiverse/UiverseControls";
 import { speechManager } from "../services/speech";
 import { soundFx } from "../services/soundFx";
+import { nativeBridge } from "../services/native";
 
 interface Scene1PlayViewProps {
   plan: Scene1Plan;
@@ -235,6 +236,7 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
       if (!eng.mutedFx) {
         soundFx.playSwapAlert(0.5);
       }
+      void nativeBridge.hapticWarning();
 
       // Faithfully speak "请换手" FIRST, then immediately start the exact 5-second countdown!
       const safetyRelease = setTimeout(() => {
@@ -355,6 +357,7 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
           if (!eng.mutedFx) {
             soundFx.playResumeChime(0.5);
           }
+          void nativeBridge.hapticSuccess();
           void speechManager.speak("继续", speakOptions());
         }
       }
@@ -399,12 +402,12 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
       <div className="absolute inset-0 z-0 bg-[radial-gradient(circle_at_center,transparent_30%,rgba(5,8,16,0.82)_100%)] pointer-events-none" />
 
       {/* Top HUD Bar */}
-      <header className="relative z-20 px-6 pt-5 pb-3">
-        <div className="mx-auto max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-950/75 backdrop-blur-xl px-5 py-3.5 shadow-xl">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+      <header className="relative z-20 safe-top px-3.5 sm:px-6 pb-2 sm:pb-3">
+        <div className="mx-auto max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-950/75 backdrop-blur-xl px-3.5 sm:px-5 py-3 shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 sm:gap-4">
             {/* Timer & Status */}
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="flex items-center gap-2">
                 <span
                   className={`w-2.5 h-2.5 rounded-full ${
                     phase === "playing"
@@ -414,26 +417,26 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
                         : "bg-slate-400"
                   }`}
                 />
-                <span className="text-3xl font-black tabular-nums tracking-tight text-white">
+                <span className="text-2xl sm:text-3xl font-black tabular-nums tracking-tight text-white">
                   {formatClock(remainingSec)}
                 </span>
               </div>
 
-              <div className="h-6 w-px bg-slate-800" />
+              <div className="h-5 sm:h-6 w-px bg-slate-800" />
 
-              <div className="flex items-center gap-4 text-xs text-slate-400">
+              <div className="flex items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs text-slate-400">
                 <div>
-                  已播报{" "}
-                  <span className="text-cyan-300 font-bold tabular-nums">{counts.total}</span> 次
+                  播报{" "}
+                  <span className="text-cyan-300 font-bold tabular-nums">{counts.total}</span>
                 </div>
                 <div>
-                  已换手{" "}
+                  换手{" "}
                   <span className="text-amber-300 font-bold tabular-nums">
                     {counts.swaps}/{plan.planned_swaps}
                   </span>
                 </div>
                 {settings.blind_mode && (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-200">
+                  <span className="hidden sm:inline-flex items-center gap-1 rounded-full bg-indigo-500/20 border border-indigo-400/40 px-2.5 py-0.5 text-[11px] font-semibold text-indigo-200">
                     <EyeOff className="w-3 h-3" />
                     纯盲听模式
                   </span>
@@ -486,9 +489,9 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
       </header>
 
       {/* Center Stage Live Visual Cue & Hand Position Indicators */}
-      <main className="relative z-10 flex-1 flex flex-col items-center justify-between px-6 py-4">
+      <main className="relative z-10 flex-1 flex flex-col items-center justify-between px-4 sm:px-6 py-3 sm:py-4 safe-bottom">
         {/* Center Current Cue Readout */}
-        <div className="mt-2 flex flex-col items-center text-center">
+        <div className="mt-1 sm:mt-2 flex flex-col items-center text-center">
           {settings.blind_mode ? (
             <div className="flex flex-col items-center mt-8">
               <div className="w-24 h-24 rounded-full border-2 border-cyan-400/35 bg-cyan-500/10 flex items-center justify-center ui-ambient-breathe shadow-[0_0_45px_rgba(34,211,238,0.25)]">
@@ -500,18 +503,18 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
               </div>
             </div>
           ) : (
-            <div className="min-h-[112px] flex flex-col items-center justify-center">
+            <div className="min-h-[92px] sm:min-h-[112px] flex flex-col items-center justify-center">
               <span className="text-[11px] uppercase tracking-[0.22em] text-slate-400 font-semibold mb-1.5">
                 当前语音指令
               </span>
               <div
                 key={activeCue?.seq ?? "init"}
-                className={`text-5xl md:text-6xl font-black tracking-tight ui-cue-pop ${
+                className={`text-4xl sm:text-5xl md:text-6xl font-black tracking-tight ui-cue-pop ${
                   lastCueKind === "item_a"
                     ? "text-transparent bg-clip-text bg-gradient-to-r from-cyan-200 via-cyan-400 to-sky-400 drop-shadow-[0_0_28px_rgba(34,211,238,0.55)]"
                     : lastCueKind === "item_b"
                       ? "text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-orange-400 to-rose-400 drop-shadow-[0_0_28px_rgba(249,115,22,0.55)]"
-                      : "text-slate-400 text-2xl font-bold"
+                      : "text-slate-400 text-xl sm:text-2xl font-bold"
                 }`}
               >
                 {lastCueLabel}
@@ -521,50 +524,50 @@ export const Scene1PlayView: React.FC<Scene1PlayViewProps> = ({
         </div>
 
         {/* Bottom Left/Right Hand Real-Time Holding Cards + Recent Cue Ribbon */}
-        <div className="w-full max-w-4xl space-y-4 pb-3">
-          <div className="grid grid-cols-2 gap-5">
+        <div className="w-full max-w-4xl space-y-3 sm:space-y-4 pb-2 sm:pb-3">
+          <div className="grid grid-cols-2 gap-3 sm:gap-5">
             {/* Current Left Hand Card */}
             <div
-              className={`rounded-2xl border px-5 py-4 backdrop-blur-xl transition-all duration-200 ${
+              className={`rounded-2xl border px-3.5 py-3 sm:px-5 sm:py-4 backdrop-blur-xl transition-all duration-200 ${
                 leftActive
                   ? "border-cyan-400 bg-cyan-500/20 shadow-[0_0_38px_-6px_rgba(34,211,238,0.7)] scale-[1.02]"
                   : "border-slate-800/80 bg-slate-950/70"
               }`}
             >
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span className="font-semibold">当前左手持有</span>
+              <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400">
+                <span className="font-semibold">当前左手</span>
                 {isSwapped && (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-300 bg-amber-500/15 px-1.5 sm:px-2 py-0.5 rounded-full">
                     <ArrowLeftRight className="w-2.5 h-2.5" />
-                    已换手
+                    已换
                   </span>
                 )}
               </div>
-              <div className="mt-1.5 text-2xl font-extrabold text-white truncate">
+              <div className="mt-1 text-lg sm:text-2xl font-extrabold text-white truncate">
                 {currentLeftItem}
               </div>
             </div>
 
             {/* Current Right Hand Card */}
             <div
-              className={`rounded-2xl border px-5 py-4 backdrop-blur-xl transition-all duration-200 text-right ${
+              className={`rounded-2xl border px-3.5 py-3 sm:px-5 sm:py-4 backdrop-blur-xl transition-all duration-200 text-right ${
                 rightActive
                   ? "border-orange-400 bg-orange-500/20 shadow-[0_0_38px_-6px_rgba(249,115,22,0.7)] scale-[1.02]"
                   : "border-slate-800/80 bg-slate-950/70"
               }`}
             >
-              <div className="flex items-center justify-between text-xs text-slate-400">
+              <div className="flex items-center justify-between text-[11px] sm:text-xs text-slate-400">
                 {isSwapped ? (
-                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-full">
+                  <span className="inline-flex items-center gap-1 text-[10px] text-amber-300 bg-amber-500/15 px-1.5 sm:px-2 py-0.5 rounded-full">
                     <ArrowLeftRight className="w-2.5 h-2.5" />
-                    已换手
+                    已换
                   </span>
                 ) : (
                   <span />
                 )}
-                <span className="font-semibold">当前右手持有</span>
+                <span className="font-semibold">当前右手</span>
               </div>
-              <div className="mt-1.5 text-2xl font-extrabold text-white truncate">
+              <div className="mt-1 text-lg sm:text-2xl font-extrabold text-white truncate">
                 {currentRightItem}
               </div>
             </div>

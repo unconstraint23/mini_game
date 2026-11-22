@@ -26,6 +26,17 @@ backend/.pytest_cache/
 .env
 .env.local
 
+# Mobile native build caches (keep android/ and ios/ project configs tracked)
+frontend/android/build/
+frontend/android/app/build/
+frontend/android/.gradle/
+frontend/android/local.properties
+frontend/android/app/src/main/assets/public/
+frontend/ios/App/build/
+frontend/ios/App/DerivedData/
+frontend/ios/App/App/public/
+frontend/ios/App/Pods/
+
 # OS, IDE & logs
 .idea/
 .vscode/

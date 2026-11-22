@@ -20,6 +20,7 @@ import type {
   UserSettings,
 } from "../types/game";
 import { api } from "../services/api";
+import { nativeBridge } from "../services/native";
 import { soundFx } from "../services/soundFx";
 import { speechManager } from "../services/speech";
 import {
@@ -303,6 +304,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
         setAvgRtMs(Math.round(st.rtList.reduce((a, b) => a + b, 0) / st.rtList.length));
         setFeedback({ id: Date.now(), kind: "hit", text: `命中 · ${rt}ms` });
         if (settings.sound_fx_enabled) soundFx.playSuccessHit(0.35);
+        void nativeBridge.hapticTap();
       } else {
         st.wrong += 1;
         st.combo = 0;
@@ -315,6 +317,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
           text: `上题${ruleHint}，应选「${COLOR_STYLES[currentTrial.answer_key].label}」`,
         });
         if (settings.sound_fx_enabled) soundFx.playErrorBuzz(0.38);
+        void nativeBridge.hapticError();
       }
 
       advanceTrial(plan);
@@ -460,57 +463,57 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
         />
 
         {/* Top HUD */}
-        <header className="relative z-10 px-6 pt-5 pb-3">
-          <div className="mx-auto max-w-4xl rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-5">
-              <div className="text-3xl font-black tabular-nums text-white">
+        <header className="relative z-10 safe-top px-3.5 sm:px-6 pb-2 sm:pb-3">
+          <div className="mx-auto max-w-4xl rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-3.5 sm:px-5 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="text-2xl sm:text-3xl font-black tabular-nums text-white">
                 {String(Math.floor(remainingSec / 60)).padStart(2, "0")}:
                 {String(Math.ceil(remainingSec) % 60).padStart(2, "0")}
               </div>
-              <div className="h-6 w-px bg-slate-800" />
-              <div className="flex items-center gap-4 text-xs">
+              <div className="h-5 sm:h-6 w-px bg-slate-800" />
+              <div className="flex items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs">
                 <span className="inline-flex items-center gap-1 text-amber-300 font-bold">
-                  <Flame className="w-4 h-4" />
-                  连击 x{combo}
+                  <Flame className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  x{combo}
                 </span>
-                <span className="text-emerald-300 font-bold tabular-nums">正确率 {acc}%</span>
+                <span className="text-emerald-300 font-bold tabular-nums">{acc}%</span>
                 <span className="text-cyan-300 font-bold tabular-nums">
-                  均速 {avgRtMs > 0 ? `${avgRtMs}ms` : "--"}
+                  {avgRtMs > 0 ? `${avgRtMs}ms` : "--"}
                 </span>
-                <span className="text-slate-400 tabular-nums">最高连击 {maxCombo}</span>
+                <span className="hidden sm:inline text-slate-400 tabular-nums">最高连击 {maxCombo}</span>
               </div>
             </div>
 
             <PushButton variant="rose" size="sm" onClick={() => finishGame(false)}>
               <Square className="w-3.5 h-3.5 fill-current" />
-              <span>结束挑战</span>
+              <span>结束</span>
             </PushButton>
           </div>
         </header>
 
         {/* Center Word Stage */}
-        <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6">
+        <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-4 safe-bottom">
           {/* High-contrast Dual Rule Indicator (instant peripheral vision cue in Mixed Mode!) */}
           {plan.mode === "mixed" && (
-            <div className="mb-4 grid grid-cols-2 gap-3 w-full max-w-md">
+            <div className="mb-3 sm:mb-4 grid grid-cols-2 gap-2.5 sm:gap-3 w-full max-w-md">
               <div
-                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 border-2 font-black text-base transition-all duration-150 ${
+                className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 border-2 font-black text-sm sm:text-base transition-all duration-150 ${
                   isInkRule
-                    ? "bg-fuchsia-500/25 border-fuchsia-400 text-fuchsia-100 scale-[1.04] shadow-[0_0_28px_-4px_rgba(217,70,239,0.75)]"
+                    ? "bg-fuchsia-500/25 border-fuchsia-400 text-fuchsia-100 scale-[1.03] shadow-[0_0_28px_-4px_rgba(217,70,239,0.75)]"
                     : "bg-slate-900/50 border-slate-800 text-slate-600 opacity-45 scale-95"
                 }`}
               >
-                <Palette className="w-5 h-5" />
+                <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>看颜色</span>
               </div>
               <div
-                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 border-2 font-black text-base transition-all duration-150 ${
+                className={`flex items-center justify-center gap-2 rounded-2xl px-3 py-2 sm:px-4 sm:py-2.5 border-2 font-black text-sm sm:text-base transition-all duration-150 ${
                   !isInkRule
-                    ? "bg-cyan-500/25 border-cyan-400 text-cyan-100 scale-[1.04] shadow-[0_0_28px_-4px_rgba(34,211,238,0.75)]"
+                    ? "bg-cyan-500/25 border-cyan-400 text-cyan-100 scale-[1.03] shadow-[0_0_28px_-4px_rgba(34,211,238,0.75)]"
                     : "bg-slate-900/50 border-slate-800 text-slate-600 opacity-45 scale-95"
                 }`}
               >
-                <Type className="w-5 h-5" />
+                <Type className="w-4 h-4 sm:w-5 sm:h-5" />
                 <span>看字义</span>
               </div>
             </div>
@@ -530,7 +533,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
             {/* Unmistakable Rule Banner built right into the card top */}
             <div
               key={`rule-${trial.seq}`}
-              className={`px-5 py-3 flex items-center justify-between border-b ${
+              className={`px-4 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between border-b ${
                 isInkRule
                   ? "bg-gradient-to-r from-fuchsia-600/35 via-purple-600/30 to-fuchsia-600/35 border-fuchsia-400/35 text-fuchsia-100"
                   : "bg-gradient-to-r from-cyan-600/35 via-sky-600/30 to-cyan-600/35 border-cyan-400/35 text-cyan-100"
@@ -542,7 +545,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
                 ) : (
                   <Type className="w-5 h-5 text-cyan-300 shrink-0" />
                 )}
-                <span className="text-lg font-black tracking-wide">
+                <span className="text-base sm:text-lg font-black tracking-wide">
                   {isInkRule ? "选【文字颜色】" : "选【字面意思】"}
                 </span>
               </div>
@@ -559,15 +562,15 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
               )}
             </div>
 
-            <div className="px-8 pt-9 pb-7">
+            <div className="px-6 sm:px-8 pt-6 pb-5 sm:pt-9 sm:pb-7">
               <div
-                className={`text-[124px] leading-none font-black ui-cue-pop ${inkStyle.textClass}`}
+                className={`text-[92px] sm:text-[124px] leading-none font-black ui-cue-pop ${inkStyle.textClass}`}
               >
                 {trial.word_text}
               </div>
 
               {/* Single-trial countdown fuse bar */}
-              <div className="mt-8 h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+              <div className="mt-6 sm:mt-8 h-2 w-full rounded-full bg-slate-800 overflow-hidden">
                 <div
                   className={`h-full rounded-full transition-[width] duration-75 ${
                     isInkRule
@@ -579,7 +582,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
               </div>
 
               {/* Instant micro feedback */}
-              <div className="mt-4 h-5 flex items-center justify-center text-xs font-bold">
+              <div className="mt-3 sm:mt-4 h-5 flex items-center justify-center text-xs font-bold">
                 {feedback && (
                   <span
                     className={`inline-flex items-center gap-1.5 ${
@@ -599,7 +602,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
           </div>
 
           {/* 4 Uiverse Tactile Color Push Buttons */}
-          <div className="mt-7 w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="mt-5 sm:mt-7 w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             {COLOR_ORDER.map((c) => {
               const info = COLOR_STYLES[c];
               return (
@@ -610,16 +613,18 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
                   fullWidth
                   onClick={() => handleAnswer(c)}
                 >
-                  <div className="flex flex-col items-center leading-tight py-0.5">
+                  <div className="flex flex-col items-center leading-tight py-1 sm:py-0.5">
                     <span className="text-lg font-black">{info.label}</span>
-                    <span className="text-[10px] opacity-80 font-mono mt-1">{info.shortcut}</span>
+                    <span className="hidden sm:inline text-[10px] opacity-80 font-mono mt-1">
+                      {info.shortcut}
+                    </span>
                   </div>
                 </PushButton>
               );
             })}
           </div>
 
-          <div className="mt-4 text-xs text-slate-500 flex items-center gap-2">
+          <div className="hidden sm:flex mt-4 text-xs text-slate-500 items-center gap-2">
             <Keyboard className="w-3.5 h-3.5" />
             <span>支持键盘数字键 1-4 或 A / S / D / F 极速作答 · Esc 结束</span>
           </div>
@@ -629,10 +634,10 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto px-7 pt-7 pb-10">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="h-full w-full overflow-y-auto px-4 sm:px-7 pt-4 sm:pt-7 pb-24 md:pb-10">
+      <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
         {/* Hero Banner */}
-        <div className="relative overflow-hidden rounded-3xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-950/35 via-[#0B1224] to-slate-950 p-6 shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-fuchsia-500/30 bg-gradient-to-br from-fuchsia-950/35 via-[#0B1224] to-slate-950 p-5 sm:p-6 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-fuchsia-400/40 bg-fuchsia-500/15 px-3 py-1 text-[11px] font-bold text-fuchsia-200 mb-3">

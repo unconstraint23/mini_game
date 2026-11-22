@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import type { SessionPayload, UserSettings } from "../types/game";
 import { Mot3DCanvas, type MotPhase } from "../components/Mot3DCanvas";
+import { nativeBridge } from "../services/native";
 import { soundFx } from "../services/soundFx";
 import {
   GlowToggle,
@@ -252,6 +253,7 @@ export const Scene3MotView: React.FC<Scene3MotViewProps> = ({
         }
         if (prev.length >= targetCount) return prev;
         if (settings.sound_fx_enabled) soundFx.playTargetLock(0.28);
+        void nativeBridge.hapticTap();
         return [...prev, ballIdx];
       });
     },
@@ -284,6 +286,8 @@ export const Scene3MotView: React.FC<Scene3MotViewProps> = ({
       if (isPerfect) soundFx.playSuccessHit(0.45);
       else soundFx.playErrorBuzz(0.32);
     }
+    if (isPerfect) void nativeBridge.hapticSuccess();
+    else void nativeBridge.hapticWarning();
   }, [phase, selectedIndices, settings.sound_fx_enabled, targetCount, targetIndices]);
 
   // Enter submits selection during recall; Esc aborts
@@ -304,37 +308,37 @@ export const Scene3MotView: React.FC<Scene3MotViewProps> = ({
     return (
       <div className="h-full w-full flex flex-col bg-[#050914] select-none overflow-hidden">
         {/* Top HUD */}
-        <header className="px-6 pt-5 pb-2 z-10">
-          <div className="mx-auto max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-5 py-3 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-4 text-xs">
-              <span className="rounded-xl bg-sky-500/20 border border-sky-400/40 px-3 py-1 font-extrabold text-sky-200">
-                第 {roundIdx} / {totalRounds} 轮
+        <header className="safe-top px-3.5 sm:px-6 pb-2 z-10">
+          <div className="mx-auto max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-3.5 sm:px-5 py-2.5 sm:py-3 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-4 text-xs min-w-0">
+              <span className="rounded-xl bg-sky-500/20 border border-sky-400/40 px-2.5 sm:px-3 py-1 font-extrabold text-sky-200 shrink-0">
+                {roundIdx}/{totalRounds} 轮
               </span>
-              <span className="text-slate-300 font-semibold">{roundBanner}</span>
+              <span className="text-slate-300 font-semibold truncate">{roundBanner}</span>
             </div>
 
-            <div className="flex items-center gap-4">
-              <div className="text-xs text-slate-400 flex items-center gap-3 tabular-nums">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="text-[11px] sm:text-xs text-slate-400 flex items-center gap-2.5 sm:gap-3 tabular-nums">
                 <span>
-                  累计命中{" "}
+                  命中{" "}
                   <strong className="text-emerald-300">
                     {totalHits}/{totalTargetsSoFar}
                   </strong>
                 </span>
-                <span>
+                <span className="hidden sm:inline">
                   完美轮 <strong className="text-cyan-300">{perfectRounds}</strong>
                 </span>
               </div>
               <PushButton variant="rose" size="sm" onClick={() => finishSession(false)}>
                 <Square className="w-3.5 h-3.5 fill-current" />
-                <span>结束追踪</span>
+                <span>结束</span>
               </PushButton>
             </div>
           </div>
         </header>
 
         {/* Interactive Three.js 3D Arena */}
-        <div className="relative flex-1 mx-6 my-2 rounded-3xl border border-sky-500/25 bg-gradient-to-b from-slate-950 via-[#070E1F] to-slate-950 overflow-hidden shadow-[inset_0_0_80px_rgba(14,165,233,0.08)]">
+        <div className="relative flex-1 mx-3 sm:mx-6 my-1.5 sm:my-2 rounded-3xl border border-sky-500/25 bg-gradient-to-b from-slate-950 via-[#070E1F] to-slate-950 overflow-hidden shadow-[inset_0_0_80px_rgba(14,165,233,0.08)]">
           <Mot3DCanvas
             roundKey={roundKey}
             ballCount={ballCount}
@@ -358,8 +362,8 @@ export const Scene3MotView: React.FC<Scene3MotViewProps> = ({
         </div>
 
         {/* Bottom Selection Bar */}
-        <footer className="px-6 pb-5 pt-2 z-10">
-          <div className="mx-auto max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-950/80 px-5 py-3 flex flex-wrap items-center justify-between gap-4">
+        <footer className="px-3.5 sm:px-6 pb-4 sm:pb-5 pt-2 safe-bottom z-10">
+          <div className="mx-auto max-w-5xl rounded-2xl border border-slate-800/80 bg-slate-950/80 px-4 sm:px-5 py-3 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
             <div className="flex items-center gap-3 text-xs text-slate-300">
               <Target className="w-4 h-4 text-amber-300" />
               {phase === "recall" ? (
@@ -397,10 +401,10 @@ export const Scene3MotView: React.FC<Scene3MotViewProps> = ({
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto px-7 pt-7 pb-10">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="h-full w-full overflow-y-auto px-4 sm:px-7 pt-4 sm:pt-7 pb-24 md:pb-10">
+      <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
         {/* Hero */}
-        <div className="relative overflow-hidden rounded-3xl border border-sky-500/30 bg-gradient-to-br from-sky-950/40 via-[#0A1326] to-slate-950 p-6 shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-sky-500/30 bg-gradient-to-br from-sky-950/40 via-[#0A1326] to-slate-950 p-5 sm:p-6 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/40 bg-sky-500/15 px-3 py-1 text-[11px] font-bold text-sky-200 mb-3">

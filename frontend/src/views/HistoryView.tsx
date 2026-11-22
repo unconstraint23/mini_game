@@ -74,12 +74,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
   );
 
   return (
-    <div className="h-full w-full overflow-y-auto px-7 pt-7 pb-10">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="h-full w-full overflow-y-auto px-4 sm:px-7 pt-4 sm:pt-7 pb-24 md:pb-10">
+      <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
         <div>
           <h2 className="text-2xl font-extrabold text-white tracking-tight">训练记录与专注统计</h2>
           <p className="text-xs text-slate-400 mt-1">
-            由本地 Python + SQLite 数据库持久化记录全部 4 大场景的反应力与专注力成长档案
+            本地离线安全持久化记录全部 4 大场景的反应力与专注力成长档案
           </p>
         </div>
 

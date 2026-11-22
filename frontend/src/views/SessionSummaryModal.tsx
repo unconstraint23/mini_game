@@ -47,8 +47,8 @@ export const SessionSummaryModal: React.FC<SessionSummaryModalProps> = ({
   const pctB = 100 - pctA;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4">
-      <div className="relative max-w-lg w-full rounded-3xl border border-cyan-400/35 bg-gradient-to-b from-slate-900 to-[#080E1C] p-7 shadow-[0_0_80px_-15px_rgba(34,211,238,0.45)]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-3.5 sm:p-4">
+      <div className="relative max-w-lg w-full max-h-[90dvh] overflow-y-auto rounded-3xl border border-cyan-400/35 bg-gradient-to-b from-slate-900 to-[#080E1C] p-5 sm:p-7 shadow-[0_0_80px_-15px_rgba(34,211,238,0.45)]">
         <div className="flex flex-col items-center text-center">
           <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-400/25 to-cyan-500/25 border border-emerald-400/40 flex items-center justify-center text-emerald-300 shadow-[0_0_28px_rgba(16,185,129,0.35)] mb-3">
             {session.completed ? (

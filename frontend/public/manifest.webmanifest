@@ -1,0 +1,24 @@
+{
+  "name": "NeuroPulse · 灵动反应训练",
+  "short_name": "NeuroPulse",
+  "description": "轻量级反应力与专注力训练小游戏 — 双物听觉反应、Stroop 色词、3D 视觉追踪、听觉急停",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#070B14",
+  "theme_color": "#070B14",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

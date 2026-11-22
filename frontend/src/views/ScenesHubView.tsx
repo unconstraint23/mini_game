@@ -66,8 +66,8 @@ export const ScenesHubView: React.FC<ScenesHubViewProps> = ({ onSelectScene }) =
   ];
 
   return (
-    <div className="h-full w-full overflow-y-auto px-7 pt-7 pb-10">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="h-full w-full overflow-y-auto px-4 sm:px-7 pt-4 sm:pt-7 pb-24 md:pb-10">
+      <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
             <h2 className="text-2xl font-extrabold text-white tracking-tight">

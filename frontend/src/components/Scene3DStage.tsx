@@ -96,13 +96,12 @@ export const Scene3DStage: React.FC<Scene3DStageProps> = ({
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(
-      42,
-      (container.clientWidth || 800) / Math.max(1, container.clientHeight || 480),
-      0.1,
-      100
-    );
-    camera.position.set(0, 0.3, 8.2);
+    const initW = container.clientWidth || 800;
+    const initH = Math.max(1, container.clientHeight || 480);
+    const initAspect = initW / initH;
+    const calcZ = (a: number) => (a < 1.15 ? Math.min(16.5, 9.2 / Math.max(0.45, a)) : 8.2);
+    const camera = new THREE.PerspectiveCamera(42, initAspect, 0.1, 100);
+    camera.position.set(0, 0.3, calcZ(initAspect));
 
     // Studio lighting
     const ambient = new THREE.AmbientLight(0x94a3b8, 0.75);
@@ -238,7 +237,9 @@ export const Scene3DStage: React.FC<Scene3DStageProps> = ({
       if (!container) return;
       const w = container.clientWidth || 800;
       const h = Math.max(1, container.clientHeight || 480);
-      camera.aspect = w / h;
+      const a = w / h;
+      camera.aspect = a;
+      camera.position.z = calcZ(a);
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };

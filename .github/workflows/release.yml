@@ -1,10 +1,10 @@
-name: Build & Publish Desktop Releases (macOS & Windows 11)
+name: Build & Publish Multi-Platform Releases (macOS, Windows 11 & Android)
 
 on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Release tag name (e.g. v1.1.1). Leave empty to use package.json version."
+        description: "Release tag name (e.g. v1.2.0). Leave empty to use package.json version."
         required: false
         default: ""
   push:
@@ -110,8 +110,50 @@ jobs:
           path: |
             release/NeuroPulse-Win11-*.exe
 
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Install frontend dependencies
+        run: pnpm --dir frontend install
+
+      - name: Build frontend web bundle
+        run: pnpm --dir frontend build
+
+      - name: Sync Capacitor Android project
+        run: pnpm --dir frontend exec cap sync android
+
+      - name: Build signed Android APK
+        working-directory: frontend/android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Prepare Android APK artifact
+        run: |
+          mkdir -p release
+          cp frontend/android/app/build/outputs/apk/release/app-release.apk release/NeuroPulse-Android.apk
+          ls -lh release/NeuroPulse-Android.apk
+
+      - name: Upload Android APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: neuropulse-android
+          path: release/NeuroPulse-Android.apk
+
   publish-release:
-    needs: [build-macos, build-windows]
+    needs: [build-macos, build-windows, build-android]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -139,7 +181,7 @@ jobs:
             TAG="v${PKG_VER}"
           fi
 
-          mapfile -t ASSETS < <(find release-assets -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' \) | sort)
+          mapfile -t ASSETS < <(find release-assets -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' -o -name '*.apk' \) | sort)
           if [[ ${#ASSETS[@]} -eq 0 ]]; then
             echo "No release assets found!"
             exit 1
@@ -147,19 +189,21 @@ jobs:
           printf 'Uploading %s\n' "${ASSETS[@]}"
 
           cat << 'EOF' > release-notes.md
-          ## NeuroPulse · 灵动反应训练桌面端
+          ## NeuroPulse · 灵动反应训练（桌面端 & 移动端）
 
           开箱即用、零环境依赖、全离线可用的反应力与专注力训练工具，内置 4 大核心训练场景：
           - **场景 1**：双物听觉反应 + 中途「请换手」5 秒倒计时 + Three.js 3D 轨道互换
-          - **场景 2**：Stroop 色词抗干扰挑战（含高对比度「看颜色 / 看字义」双灯切换提示与语音干扰）
-          - **场景 3**：3D 多球视觉追踪 (MOT)（Three.js 三维碰撞 + 鼠标直接拾取）
+          - **场景 2**：Stroop 色词抗干扰挑战（高对比度「看颜色 / 看字义」双灯切换 + 语音干扰）
+          - **场景 3**：3D 多球视觉追踪 (MOT)（Three.js 三维物理碰撞 + 桌面鼠标/手机触控拾取）
           - **场景 4**：听觉 Go / No-Go 急停反射训练（自定义词库 + 毫秒级反应拍击）
 
           ### 直接下载（点击即下）
+          - **Android 手机 / 平板**：下载 `NeuroPulse-Android.apk`（离线本地引擎 + 系统原生语音 + 触感震动）
           - **macOS (Apple Silicon M1/M2/M3/M4)**：下载 `NeuroPulse-macOS-arm64.dmg`（或 `.zip`）
           - **Windows 11 (64 位)**：下载 `NeuroPulse-Win11-Setup.exe`（安装版）或 `NeuroPulse-Win11-Portable.exe`（免安装便携版）
+          - **iOS (iPhone / iPad)**：仓库已内置 Capacitor SwiftPM Xcode 工程（`frontend/ios`），用 Xcode 打开即可直连真机安装或导出 IPA。
 
-          > **macOS 首次打开提示说明**：本安装包已通过苹果 `codesign --verify --deep --strict` 深度完整性自签名校验。由于开源个人项目未使用 Apple 付费开发者公证证书，从浏览器下载首次打开时若系统弹出“无法验证开发者”，在「系统设置 → 隐私与安全性」底部点击 **「仍要打开」**（或在终端执行 `xattr -cr /Applications/NeuroPulse.app`）即可直接打开使用。
+          > **macOS 首次打开提示说明**：本安装包已通过苹果 `codesign --verify --deep --strict` 深度完整性自签名校验。首次从浏览器下载打开若系统提示“无法验证开发者”，在「系统设置 → 隐私与安全性」底部点击 **「仍要打开」**（或在终端执行 `xattr -cr /Applications/NeuroPulse.app`）即可直接打开。
           EOF
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
@@ -167,7 +211,7 @@ jobs:
             gh release edit "${TAG}" --notes-file release-notes.md --latest
           else
             gh release create "${TAG}" "${ASSETS[@]}" \
-              --title "NeuroPulse ${TAG} · 灵动反应训练桌面端" \
+              --title "NeuroPulse ${TAG} · 跨端反应力与专注力训练" \
               --notes-file release-notes.md \
               --latest
           fi

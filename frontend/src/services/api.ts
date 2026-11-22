@@ -1,3 +1,4 @@
+import { Capacitor } from "@capacitor/core";
 import type {
   HealthResponse,
   ItemPreset,
@@ -9,6 +10,13 @@ import type {
   TrainingSession,
   UserSettings,
 } from "../types/game";
+import { localStore } from "./localStore";
+
+let forceLocalOfflineMode = Capacitor.isNativePlatform();
+
+function isElectronDesktop(): boolean {
+  return typeof window !== "undefined" && Boolean(window.neuropulse?.isDesktop);
+}
 
 function getBaseUrl(): string {
   if (typeof window !== "undefined" && window.neuropulse?.apiBaseUrl) {
@@ -17,59 +25,100 @@ function getBaseUrl(): string {
   return import.meta.env.VITE_API_BASE_URL || "http://127.0.0.1:18765";
 }
 
-async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${getBaseUrl()}${path}`, {
-    ...init,
-    headers: {
-      "Content-Type": "application/json",
-      ...(init?.headers || {}),
-    },
-  });
-  if (!res.ok) {
-    let detail = `HTTP ${res.status}`;
-    try {
-      const err = (await res.json()) as { detail?: string };
-      if (err?.detail) detail = err.detail;
-    } catch {
-      // ignore non-json error bodies
+function useLocalOnly(): boolean {
+  return forceLocalOfflineMode || Capacitor.isNativePlatform();
+}
+
+async function requestJson<T>(path: string, init?: RequestInit, timeoutMs = 4500): Promise<T> {
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(`${getBaseUrl()}${path}`, {
+      ...init,
+      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+        ...(init?.headers || {}),
+      },
+    });
+    if (!res.ok) {
+      let detail = `HTTP ${res.status}`;
+      try {
+        const err = (await res.json()) as { detail?: string };
+        if (err?.detail) detail = err.detail;
+      } catch {
+        // ignore non-json error bodies
+      }
+      throw new Error(detail);
     }
-    throw new Error(detail);
+    return (await res.json()) as T;
+  } finally {
+    window.clearTimeout(timer);
   }
-  return (await res.json()) as T;
 }
 
 export const api = {
   baseUrl: getBaseUrl,
 
-  getHealth: () => requestJson<HealthResponse>("/health"),
+  isLocalOfflineMode: () => useLocalOnly(),
 
-  getSettings: () => requestJson<UserSettings>("/api/settings"),
+  getHealth: async (): Promise<HealthResponse> => {
+    if (useLocalOnly()) {
+      return localStore.getHealth();
+    }
+    try {
+      return await requestJson<HealthResponse>("/health", undefined, isElectronDesktop() ? 2500 : 900);
+    } catch (err) {
+      // On mobile web / standalone PWA (not Electron), gracefully switch to built-in offline engine
+      if (!isElectronDesktop()) {
+        forceLocalOfflineMode = true;
+        return localStore.getHealth();
+      }
+      throw err;
+    }
+  },
 
-  saveSettings: (settings: UserSettings) =>
-    requestJson<UserSettings>("/api/settings", {
+  getSettings: async (): Promise<UserSettings> => {
+    if (useLocalOnly()) return localStore.getSettings();
+    return requestJson<UserSettings>("/api/settings");
+  },
+
+  saveSettings: async (settings: UserSettings): Promise<UserSettings> => {
+    if (useLocalOnly()) return localStore.saveSettings(settings);
+    return requestJson<UserSettings>("/api/settings", {
       method: "PUT",
       body: JSON.stringify(settings),
-    }),
+    });
+  },
 
-  listPresets: () => requestJson<ItemPreset[]>("/api/presets"),
+  listPresets: async (): Promise<ItemPreset[]> => {
+    if (useLocalOnly()) return localStore.listPresets();
+    return requestJson<ItemPreset[]>("/api/presets");
+  },
 
-  createPreset: (payload: { name: string; item_a: string; item_b: string }) =>
-    requestJson<ItemPreset>("/api/presets", {
+  createPreset: async (payload: { name: string; item_a: string; item_b: string }): Promise<ItemPreset> => {
+    if (useLocalOnly()) return localStore.createPreset(payload);
+    return requestJson<ItemPreset>("/api/presets", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
 
-  markPresetUsed: (presetId: number) =>
-    requestJson<ItemPreset>(`/api/presets/${presetId}/use`, {
+  markPresetUsed: async (presetId: number): Promise<ItemPreset> => {
+    if (useLocalOnly()) return localStore.markPresetUsed(presetId);
+    return requestJson<ItemPreset>(`/api/presets/${presetId}/use`, {
       method: "POST",
-    }),
+    });
+  },
 
-  deletePreset: (presetId: number) =>
-    requestJson<{ deleted: boolean }>(`/api/presets/${presetId}`, {
+  deletePreset: async (presetId: number): Promise<{ deleted: boolean }> => {
+    if (useLocalOnly()) return localStore.deletePreset(presetId);
+    return requestJson<{ deleted: boolean }>(`/api/presets/${presetId}`, {
       method: "DELETE",
-    }),
+    });
+  },
 
-  createScene1Plan: (payload: {
+  createScene1Plan: async (payload: {
     item_a: string;
     item_b: string;
     duration_sec: number;
@@ -77,24 +126,28 @@ export const api = {
     max_interval_ms: number;
     swap_count: number;
     swap_countdown_sec: number;
-  }) =>
-    requestJson<Scene1Plan>("/api/scene1/plan", {
+  }): Promise<Scene1Plan> => {
+    if (useLocalOnly()) return localStore.createScene1Plan(payload);
+    return requestJson<Scene1Plan>("/api/scene1/plan", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
 
-  createScene2Plan: (payload: {
+  createScene2Plan: async (payload: {
     duration_sec: number;
     mode: "ink" | "mixed";
     conflict_ratio: number;
     trial_count?: number;
-  }) =>
-    requestJson<Scene2Plan>("/api/scene2/plan", {
+  }): Promise<Scene2Plan> => {
+    if (useLocalOnly()) return localStore.createScene2Plan(payload);
+    return requestJson<Scene2Plan>("/api/scene2/plan", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
 
-  createScene4Plan: (payload: {
+  createScene4Plan: async (payload: {
     go_words: string[];
     nogo_words: string[];
     duration_sec: number;
@@ -102,39 +155,54 @@ export const api = {
     max_interval_ms: number;
     nogo_ratio: number;
     response_window_ms: number;
-  }) =>
-    requestJson<Scene4Plan>("/api/scene4/plan", {
+  }): Promise<Scene4Plan> => {
+    if (useLocalOnly()) return localStore.createScene4Plan(payload);
+    return requestJson<Scene4Plan>("/api/scene4/plan", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
 
-  saveSession: (payload: SessionPayload) =>
-    requestJson<TrainingSession>("/api/sessions", {
+  saveSession: async (payload: SessionPayload): Promise<TrainingSession> => {
+    if (useLocalOnly()) return localStore.saveSession(payload);
+    return requestJson<TrainingSession>("/api/sessions", {
       method: "POST",
       body: JSON.stringify(payload),
-    }),
+    });
+  },
 
-  listSessions: (limit = 50, sceneId?: string) => {
+  listSessions: async (limit = 50, sceneId?: string): Promise<TrainingSession[]> => {
+    if (useLocalOnly()) return localStore.listSessions(limit, sceneId);
     const query = sceneId
       ? `?limit=${limit}&scene_id=${encodeURIComponent(sceneId)}`
       : `?limit=${limit}`;
     return requestJson<TrainingSession[]>(`/api/sessions${query}`);
   },
 
-  deleteSession: (sessionId: number) =>
-    requestJson<{ deleted: boolean }>(`/api/sessions/${sessionId}`, {
+  deleteSession: async (sessionId: number): Promise<{ deleted: boolean }> => {
+    if (useLocalOnly()) return localStore.deleteSession(sessionId);
+    return requestJson<{ deleted: boolean }>(`/api/sessions/${sessionId}`, {
       method: "DELETE",
-    }),
+    });
+  },
 
-  getStats: () => requestJson<StatsOverview>("/api/stats"),
+  getStats: async (): Promise<StatsOverview> => {
+    if (useLocalOnly()) return localStore.getStats();
+    return requestJson<StatsOverview>("/api/stats");
+  },
 
-  prewarmNativeTts: (texts: string[], rate: number) =>
-    requestJson<{ available: boolean; warmed: number }>("/api/tts/prewarm", {
+  prewarmNativeTts: async (texts: string[], rate: number): Promise<{ available: boolean; warmed: number }> => {
+    if (useLocalOnly()) return { available: Capacitor.isNativePlatform(), warmed: 0 };
+    return requestJson<{ available: boolean; warmed: number }>("/api/tts/prewarm", {
       method: "POST",
       body: JSON.stringify({ texts, rate }),
-    }),
+    });
+  },
 
   synthesizeNativeTts: async (text: string, rate: number): Promise<ArrayBuffer> => {
+    if (useLocalOnly()) {
+      throw new Error("Local mode uses native mobile TTS plugin or WebSpeech");
+    }
     const res = await fetch(`${getBaseUrl()}/api/tts/synthesize`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },

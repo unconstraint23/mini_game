@@ -35,7 +35,7 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
     def health() -> HealthResponse:
         return HealthResponse(
             status="ok",
-            version="1.1.2",
+            version="1.2.0",
             platform=platform.system().lower(),
             native_tts_available=tts.is_available,
             db_path=str(db.db_path),

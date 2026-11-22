@@ -18,6 +18,7 @@ import type {
   UserSettings,
 } from "../types/game";
 import { api } from "../services/api";
+import { nativeBridge } from "../services/native";
 import { soundFx } from "../services/soundFx";
 import { speechManager } from "../services/speech";
 import {
@@ -279,6 +280,7 @@ export const Scene4GoNoGoView: React.FC<Scene4GoNoGoViewProps> = ({
         text: `命中行动指令！反应时 ${rt}ms`,
       });
       if (settings.sound_fx_enabled) soundFx.playSuccessHit(0.38);
+      void nativeBridge.hapticMedium();
     } else {
       e.falseAlarms += 1;
       syncMetrics();
@@ -288,6 +290,7 @@ export const Scene4GoNoGoView: React.FC<Scene4GoNoGoViewProps> = ({
         text: `冲动误触！「${e.activeEvent.word}」需立刻急停`,
       });
       if (settings.sound_fx_enabled) soundFx.playErrorBuzz(0.45);
+      void nativeBridge.hapticError();
     }
   }, [settings.sound_fx_enabled, syncMetrics]);
 
@@ -458,21 +461,21 @@ export const Scene4GoNoGoView: React.FC<Scene4GoNoGoViewProps> = ({
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_45%,rgba(245,158,11,0.12),transparent_58%)] pointer-events-none" />
 
         {/* HUD */}
-        <header className="relative z-10 px-6 pt-5 pb-2">
-          <div className="mx-auto max-w-4xl rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-5 py-3.5 flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-5">
-              <div className="text-3xl font-black tabular-nums text-white">
+        <header className="relative z-10 safe-top px-3.5 sm:px-6 pb-2">
+          <div className="mx-auto max-w-4xl rounded-2xl border border-slate-800/80 bg-slate-950/80 backdrop-blur-xl px-3.5 sm:px-5 py-2.5 sm:py-3.5 flex flex-wrap items-center justify-between gap-2.5 sm:gap-4">
+            <div className="flex items-center gap-3 sm:gap-5">
+              <div className="text-2xl sm:text-3xl font-black tabular-nums text-white">
                 {String(Math.floor(remainingSec / 60)).padStart(2, "0")}:
                 {String(Math.ceil(remainingSec) % 60).padStart(2, "0")}
               </div>
-              <div className="h-6 w-px bg-slate-800" />
-              <div className="flex flex-wrap items-center gap-4 text-xs tabular-nums">
+              <div className="h-5 sm:h-6 w-px bg-slate-800" />
+              <div className="flex flex-wrap items-center gap-2.5 sm:gap-4 text-[11px] sm:text-xs tabular-nums">
                 <span className="text-emerald-300 font-bold">命中 {metrics.goHits}</span>
-                <span className="text-cyan-300 font-bold">成功急停 {metrics.nogoInhibits}</span>
+                <span className="text-cyan-300 font-bold">急停 {metrics.nogoInhibits}</span>
                 <span className="text-rose-400 font-bold">
-                  误触/漏击 {metrics.falseAlarms}/{metrics.goMisses}
+                  误/漏 {metrics.falseAlarms}/{metrics.goMisses}
                 </span>
-                <span className="text-amber-300 font-bold">
+                <span className="hidden sm:inline text-amber-300 font-bold">
                   均速 {metrics.avgRt > 0 ? `${metrics.avgRt}ms` : "--"}
                 </span>
               </div>
@@ -480,13 +483,13 @@ export const Scene4GoNoGoView: React.FC<Scene4GoNoGoViewProps> = ({
 
             <PushButton variant="rose" size="sm" onClick={() => finishGame(false)}>
               <Square className="w-3.5 h-3.5 fill-current" />
-              <span>结束训练</span>
+              <span>结束</span>
             </PushButton>
           </div>
         </header>
 
         {/* Center Arena */}
-        <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 gap-7">
+        <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 pb-4 safe-bottom gap-5 sm:gap-7">
           {/* Cue Word / Blind Audio Display */}
           <div className="text-center min-h-[115px] flex flex-col items-center justify-center">
             {blindAudio ? (
@@ -524,20 +527,23 @@ export const Scene4GoNoGoView: React.FC<Scene4GoNoGoViewProps> = ({
             )}
           </div>
 
-          {/* Oversized Uiverse Tactile Circular Reaction Pad */}
+          {/* Oversized Uiverse Tactile Circular Reaction Pad (instant pointerdown trigger for zero mobile delay) */}
           <div className="relative flex items-center justify-center">
             <div className="absolute -inset-4 rounded-full border border-amber-400/20 ui-ambient-breathe pointer-events-none" />
             <button
               type="button"
               data-pressed={padPressed}
-              onClick={handlePadTrigger}
-              className="ui-reaction-pad w-52 h-52 bg-gradient-to-br from-amber-300 via-orange-500 to-rose-600 p-[3px] shadow-[0_14px_0_#7c2d12,0_25px_60px_-10px_rgba(249,115,22,0.55)]"
+              onPointerDown={(e) => {
+                e.preventDefault();
+                handlePadTrigger();
+              }}
+              className="ui-reaction-pad w-44 h-44 sm:w-52 sm:h-52 touch-none bg-gradient-to-br from-amber-300 via-orange-500 to-rose-600 p-[3px] shadow-[0_14px_0_#7c2d12,0_25px_60px_-10px_rgba(249,115,22,0.55)]"
             >
               <div className="w-full h-full rounded-full bg-gradient-to-b from-amber-400 via-orange-500 to-orange-600 flex flex-col items-center justify-center text-slate-950 shadow-[inset_0_3px_0_rgba(255,255,255,0.45)]">
-                <Hand className="w-12 h-12 mb-1.5 stroke-[2.4]" />
-                <span className="text-xl font-black tracking-wide">拍击响应</span>
+                <Hand className="w-10 h-10 sm:w-12 sm:h-12 mb-1 sm:mb-1.5 stroke-[2.4]" />
+                <span className="text-lg sm:text-xl font-black tracking-wide">拍击响应</span>
                 <span className="text-[11px] font-bold opacity-80 mt-0.5 font-mono">
-                  Space / Click
+                  轻触 / Space
                 </span>
               </div>
             </button>
@@ -586,10 +592,10 @@ export const Scene4GoNoGoView: React.FC<Scene4GoNoGoViewProps> = ({
   }
 
   return (
-    <div className="h-full w-full overflow-y-auto px-7 pt-7 pb-10">
-      <div className="mx-auto max-w-5xl space-y-6">
+    <div className="h-full w-full overflow-y-auto px-4 sm:px-7 pt-4 sm:pt-7 pb-24 md:pb-10">
+      <div className="mx-auto max-w-5xl space-y-5 sm:space-y-6">
         {/* Hero */}
-        <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-950/35 via-[#13101E] to-slate-950 p-6 shadow-2xl">
+        <div className="relative overflow-hidden rounded-3xl border border-amber-500/30 bg-gradient-to-br from-amber-950/35 via-[#13101E] to-slate-950 p-5 sm:p-6 shadow-2xl">
           <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
             <div className="max-w-xl">
               <div className="inline-flex items-center gap-2 rounded-full border border-amber-400/40 bg-amber-500/15 px-3 py-1 text-[11px] font-bold text-amber-200 mb-3">

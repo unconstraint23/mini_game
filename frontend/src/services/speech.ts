@@ -1,3 +1,5 @@
+import { Capacitor } from "@capacitor/core";
+import { TextToSpeech } from "@capacitor-community/text-to-speech";
 import type { TtsEngineMode } from "../types/game";
 import { api } from "./api";
 
@@ -29,7 +31,6 @@ class SpeechManager {
       return [];
     }
     const list = window.speechSynthesis.getVoices();
-    // Sort Chinese voices first
     this.voices = [...list].sort((a, b) => {
       const aZh = a.lang.toLowerCase().startsWith("zh") ? 0 : 1;
       const bZh = b.lang.toLowerCase().startsWith("zh") ? 0 : 1;
@@ -74,6 +75,9 @@ class SpeechManager {
   }
 
   public stop(): void {
+    if (Capacitor.isNativePlatform()) {
+      void TextToSpeech.stop().catch(() => {});
+    }
     if (typeof window !== "undefined" && "speechSynthesis" in window) {
       try {
         window.speechSynthesis.cancel();
@@ -97,6 +101,9 @@ class SpeechManager {
   }
 
   public async prewarm(texts: string[], options: SpeakOptions): Promise<void> {
+    if (Capacitor.isNativePlatform() || api.isLocalOfflineMode()) {
+      return;
+    }
     const useNative =
       options.engine === "native" ||
       (options.engine === "auto" && !this.hasChineseWebVoice() && options.nativeAvailable);
@@ -129,19 +136,45 @@ class SpeechManager {
 
     this.stop();
 
-    const preferNative =
-      options.engine === "native" ||
-      (options.engine === "auto" && !this.hasChineseWebVoice() && Boolean(options.nativeAvailable));
+    // On native iOS / Android, prioritize Capacitor native offline TTS (AVSpeechSynthesizer / Android TTS)
+    if (Capacitor.isNativePlatform() && options.engine !== "webspeech") {
+      const mobileOk = await this.speakViaCapacitorNative(clean, options.rate, options.volume);
+      if (mobileOk) return;
+    }
 
-    if (preferNative) {
+    const preferPythonWav =
+      !api.isLocalOfflineMode() &&
+      (options.engine === "native" ||
+        (options.engine === "auto" && !this.hasChineseWebVoice() && Boolean(options.nativeAvailable)));
+
+    if (preferPythonWav) {
       const ok = await this.speakViaNativeBackend(clean, options.rate, options.volume);
       if (ok) return;
-      // Fallback to WebSpeech if backend failed
     }
 
     const webOk = await this.speakViaWebSpeech(clean, options);
-    if (!webOk && options.nativeAvailable) {
+    if (!webOk && options.nativeAvailable && !api.isLocalOfflineMode()) {
       await this.speakViaNativeBackend(clean, options.rate, options.volume);
+    }
+  }
+
+  private async speakViaCapacitorNative(
+    text: string,
+    rate: number,
+    volume: number
+  ): Promise<boolean> {
+    try {
+      await TextToSpeech.speak({
+        text,
+        lang: "zh-CN",
+        rate: Math.max(0.6, Math.min(1.8, rate)),
+        pitch: 1.0,
+        volume: Math.max(0.1, Math.min(1.0, volume)),
+        category: "playback",
+      });
+      return true;
+    } catch {
+      return false;
     }
   }
 
@@ -159,7 +192,6 @@ class SpeechManager {
         resolve(ok);
       };
 
-      // Guard against rare Chromium bug where onend does not fire
       const guardTimer = setTimeout(() => done(true), Math.max(2400, text.length * 420));
 
       try {

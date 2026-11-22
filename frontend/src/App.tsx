@@ -12,9 +12,11 @@ import {
   type UserSettings,
 } from "./types/game";
 import { api } from "./services/api";
+import { nativeBridge } from "./services/native";
 import { speechManager } from "./services/speech";
 import { soundFx } from "./services/soundFx";
 import { SidebarNav } from "./components/SidebarNav";
+import { MobileBottomNav, MobileTopBar } from "./components/MobileNav";
 import { Scene1SetupView } from "./views/Scene1SetupView";
 import { Scene1PlayView } from "./views/Scene1PlayView";
 import { Scene2StroopView } from "./views/Scene2StroopView";
@@ -316,22 +318,48 @@ export const App: React.FC = () => {
 
   const isPlayingAny = Boolean(activePlan) || subScenePlaying;
 
+  useEffect(() => {
+    void nativeBridge.initMobileChrome();
+  }, []);
+
+  useEffect(() => {
+    if (isPlayingAny) {
+      void nativeBridge.acquireWakeLock();
+    } else {
+      void nativeBridge.releaseWakeLock();
+    }
+    return () => {
+      void nativeBridge.releaseWakeLock();
+    };
+  }, [isPlayingAny]);
+
   return (
-    <div className="flex h-screen w-screen overflow-hidden bg-[#070B14] text-slate-100">
+    <div className="flex flex-col md:flex-row h-[100dvh] w-screen overflow-hidden bg-[#070B14] text-slate-100">
       {!isPlayingAny && (
-        <SidebarNav
-          activeView={activeView}
-          onSelectView={(v) => {
-            setSummarySession(null);
-            setActiveView(v);
-          }}
-          disabled={isPlayingAny}
-          health={health}
-          stats={stats}
-        />
+        <>
+          <SidebarNav
+            activeView={activeView}
+            onSelectView={(v) => {
+              setSummarySession(null);
+              setActiveView(v);
+            }}
+            disabled={isPlayingAny}
+            health={health}
+            stats={stats}
+          />
+          <MobileTopBar
+            activeView={activeView}
+            onSelectView={(v) => {
+              setSummarySession(null);
+              setActiveView(v);
+            }}
+            health={health}
+            stats={stats}
+          />
+        </>
       )}
 
-      <main className="relative flex-1 h-full overflow-hidden">
+      <main className="relative flex-1 min-h-0 h-full overflow-hidden">
         {activePlan ? (
           <Scene1PlayView
             plan={activePlan}
@@ -385,6 +413,16 @@ export const App: React.FC = () => {
         )}
       </main>
 
+      {!isPlayingAny && (
+        <MobileBottomNav
+          activeView={activeView}
+          onSelectView={(v) => {
+            setSummarySession(null);
+            setActiveView(v);
+          }}
+        />
+      )}
+
       <SessionSummaryModal
         session={summarySession}
         onReplay={() => void startScene1Training()}
@@ -396,7 +434,7 @@ export const App: React.FC = () => {
       />
 
       {toast && (
-        <div className="fixed bottom-5 right-6 z-50 rounded-2xl border border-cyan-400/40 bg-slate-900/95 px-4 py-2.5 text-xs font-semibold text-cyan-200 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.75)] backdrop-blur-md">
+        <div className="fixed bottom-20 md:bottom-5 right-4 md:right-6 z-50 rounded-2xl border border-cyan-400/40 bg-slate-900/95 px-4 py-2.5 text-xs font-semibold text-cyan-200 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.75)] backdrop-blur-md">
           {toast}
         </div>
       )}

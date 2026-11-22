@@ -138,8 +138,8 @@ export const Scene1SetupView: React.FC<Scene1SetupViewProps> = ({
   return (
     <div className="relative h-full w-full overflow-y-auto">
       {/* Subtle 3D Studio Preview Header Banner */}
-      <div className="relative mx-auto max-w-5xl px-7 pt-7 pb-10 space-y-6">
-        <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-[#0B1325]/95 to-slate-950/95 p-6 shadow-2xl">
+      <div className="relative mx-auto max-w-5xl px-4 sm:px-7 pt-4 sm:pt-7 pb-24 md:pb-10 space-y-5 sm:space-y-6">
+        <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-br from-slate-900/95 via-[#0B1325]/95 to-slate-950/95 p-5 sm:p-6 shadow-2xl">
           <div className="absolute inset-0 opacity-85">
             <Scene3DStage
               enabled={settings.enable_3d}
@@ -193,7 +193,7 @@ export const Scene1SetupView: React.FC<Scene1SetupViewProps> = ({
         </div>
 
         {/* Section 1: Dual Hand Items Card */}
-        <TactileCard className="p-6">
+        <TactileCard className="p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
               <h3 className="text-base font-bold text-white">手持物品设定</h3>
@@ -350,9 +350,9 @@ export const Scene1SetupView: React.FC<Scene1SetupViewProps> = ({
         </TactileCard>
 
         {/* Section 2: Duration, Pace & Hand-Swap Configuration */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
           {/* Duration & Hand-Swap Rules */}
-          <TactileCard className="p-6 space-y-5">
+          <TactileCard className="p-4 sm:p-6 space-y-5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-cyan-500/15 text-cyan-300 flex items-center justify-center">
                 <Clock className="w-4 h-4" />
@@ -457,7 +457,7 @@ export const Scene1SetupView: React.FC<Scene1SetupViewProps> = ({
           </TactileCard>
 
           {/* Pace, Audio & Immersion Settings */}
-          <TactileCard className="p-6 space-y-5">
+          <TactileCard className="p-4 sm:p-6 space-y-5">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-xl bg-orange-500/15 text-orange-300 flex items-center justify-center">
                 <Gauge className="w-4 h-4" />
@@ -674,7 +674,7 @@ export const Scene1SetupView: React.FC<Scene1SetupViewProps> = ({
           </span>
           <span className="inline-flex items-center gap-1.5">
             <Box className="w-3.5 h-3.5 text-slate-400" />
-            所有配置与记录均自动保存在本地 SQLite，完全离线可用
+            所有配置与记录均自动保存在本地，完全离线可用
           </span>
         </div>
       </div>

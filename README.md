@@ -8,11 +8,13 @@
 
 | 平台 | 文件类型 | 一键直链下载 |
 | --- | --- | --- |
+| **Android (安卓手机/平板)** | 安装包 `.apk` | [下载 NeuroPulse-Android.apk](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Android.apk) |
 | **macOS (Apple Silicon)** | 安装镜像 `.dmg` | [下载 NeuroPulse-macOS-arm64.dmg](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-macOS-arm64.dmg) |
 | **macOS (Apple Silicon)** | 绿色压缩包 `.zip` | [下载 NeuroPulse-macOS-arm64.zip](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-macOS-arm64.zip) |
 | **Windows 11 (x64)** | 安装程序 `.exe` | [下载 NeuroPulse-Win11-Setup.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Setup.exe) |
 | **Windows 11 (x64)** | 免安装便携版 `.exe` | [下载 NeuroPulse-Win11-Portable.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Portable.exe) |
 
+- **iOS (iPhone / iPad)**：已内置 Capacitor 7 + Swift Package Manager 完整 Xcode 工程（[frontend/ios](file:///Volumes/person/person_code/tool_game/frontend/ios)），执行 `pnpm run mobile:ios` 在 Xcode 中打开即可真机安装或导出 IPA（同时兼容移动端 PWA 添加到主屏幕离线运行）。
 - 发布页总览：[GitHub Releases (Latest)](https://github.com/unconstraint23/mini_game/releases/latest)
 - **macOS 首次打开提示**：安装包已内置严格深度自签名；首次从浏览器下载打开若提示“无法验证开发者”，在「系统设置 → 隐私与安全性」点击 **「仍要打开」**（或在终端执行 `xattr -cr /Applications/NeuroPulse.app`）即可正常打开。
 
@@ -107,17 +109,26 @@ cd backend && .venv/bin/pytest -v
 pnpm run build
 ```
 
-### 4. 打包独立桌面安装包（用户下载即用）
+### 4. 打包独立桌面与移动端安装包（用户下载即用）
 
 ```bash
-# macOS：构建前端 + Python Sidecar + 输出 release/*.dmg 与 *.zip
+# macOS：构建前端 + Python Sidecar + 严格深度自签名 + 输出 release/NeuroPulse-macOS-arm64.dmg/.zip
 pnpm run dist:mac
 
-# Windows 11（在 Win11 环境执行）：输出 release/*.exe（NSIS 安装程序与免安装便携版）
+# Windows 11（在 Win11 环境执行）：输出 release/NeuroPulse-Win11-Setup.exe 与 Portable.exe
 pnpm run dist:win
+
+# 同步前端到 Android & iOS 原生 Capacitor 工程
+pnpm run mobile:sync
+
+# 在 Android Studio 中打开 Android 工程（或命令行在 frontend/android 执行 ./gradlew assembleRelease）
+pnpm run mobile:android
+
+# 在 Xcode 中打开 iOS SwiftPM 工程（无需 CocoaPods，直连 iPhone/iPad 真机或打包 IPA）
+pnpm run mobile:ios
 ```
 
-推送 `v*` 标签（如 `git tag v1.1.0 && git push origin v1.1.0`）或在 GitHub Actions 手动触发 [release.yml](file:///Volumes/person/person_code/tool_game/.github/workflows/release.yml) 即可自动产出 macOS 与 Windows 11 双端安装包。
+推送 `v*` 标签（如 `git tag v1.2.0 && git push origin v1.2.0`）或在 GitHub Actions 手动触发 [release.yml](file:///Volumes/person/person_code/tool_game/.github/workflows/release.yml) 即可自动同时构建并发布 **macOS `.dmg`/`.zip`、Windows 11 `.exe` 与 Android `.apk`** 至 GitHub Releases。
 
 ## 快捷键一览
 

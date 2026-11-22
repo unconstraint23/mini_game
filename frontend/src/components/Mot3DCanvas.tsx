@@ -92,8 +92,11 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
     container.appendChild(renderer.domElement);
 
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(44, width / height, 0.1, 100);
-    camera.position.set(0, 0.65, 8.9);
+    const aspect = width / height;
+    const camera = new THREE.PerspectiveCamera(44, aspect, 0.1, 100);
+    const computeCameraZ = (a: number) => (a < 1.15 ? Math.min(19.0, 11.4 / Math.max(0.45, a)) : 8.9);
+    let baseCameraZ = computeCameraZ(aspect);
+    camera.position.set(0, 0.65, baseCameraZ);
     camera.lookAt(0, 0, 0);
 
     // Lighting
@@ -131,8 +134,11 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
 
     // Create N non-overlapping balls with smooth 3D velocity vectors
     const sphereGeo = new THREE.SphereGeometry(BALL_RADIUS, 28, 28);
+    const hitGeo = new THREE.SphereGeometry(BALL_RADIUS * 1.48, 12, 12);
+    const hitMat = new THREE.MeshBasicMaterial({ visible: false });
     const ringGeo = new THREE.TorusGeometry(BALL_RADIUS * 1.48, 0.032, 10, 48);
     const balls: BallEntity[] = [];
+    const hitMeshes: THREE.Mesh[] = [];
 
     for (let i = 0; i < ballCount; i++) {
       const pos = new THREE.Vector3();
@@ -163,6 +169,12 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
       mesh.position.copy(pos);
       mesh.userData.ballIndex = i;
       scene.add(mesh);
+
+      // Generous invisible hit sphere for effortless thumb tapping on mobile touchscreens
+      const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+      hitMesh.userData.ballIndex = i;
+      mesh.add(hitMesh);
+      hitMeshes.push(hitMesh);
 
       const ringMat = new THREE.MeshBasicMaterial({
         color: 0x22d3ee,
@@ -197,7 +209,7 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
     const hitTest = (): number => {
       if (propsRef.current.phase !== "recall") return -1;
       raycaster.setFromCamera(pointer, camera);
-      const hits = raycaster.intersectObjects(balls.map((b) => b.mesh), false);
+      const hits = raycaster.intersectObjects(hitMeshes, false);
       if (hits.length > 0 && typeof hits[0].object.userData.ballIndex === "number") {
         return hits[0].object.userData.ballIndex as number;
       }
@@ -224,7 +236,10 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
     const resizeObserver = new ResizeObserver(() => {
       const w = container.clientWidth || 900;
       const h = Math.max(1, container.clientHeight || 520);
-      camera.aspect = w / h;
+      const nextAspect = w / h;
+      baseCameraZ = computeCameraZ(nextAspect);
+      camera.aspect = nextAspect;
+      camera.position.z = baseCameraZ;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     });
@@ -415,6 +430,8 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
       boxGeo.dispose();
       edgesGeo.dispose();
       sphereGeo.dispose();
+      hitGeo.dispose();
+      hitMat.dispose();
       ringGeo.dispose();
       balls.forEach((b) => {
         b.mat.dispose();
@@ -431,5 +448,5 @@ export const Mot3DCanvas: React.FC<Mot3DCanvasProps> = ({
     );
   }
 
-  return <div ref={containerRef} className="w-full h-full relative" />;
+  return <div ref={containerRef} className="w-full h-full relative touch-none" />;
 };
