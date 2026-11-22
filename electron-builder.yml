@@ -20,6 +20,7 @@ mac:
   category: public.app-category.games
   icon: build-resources/icon.png
   hardenedRuntime: false
+  artifactName: "NeuroPulse-macOS-${arch}.${ext}"
   target:
     - target: dmg
       arch:
@@ -49,8 +50,12 @@ win:
         - x64
 
 nsis:
+  artifactName: "NeuroPulse-Win11-Setup.${ext}"
   oneClick: false
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: true
   createStartMenuShortcut: true
   shortcutName: NeuroPulse 灵动反应训练
+
+portable:
+  artifactName: "NeuroPulse-Win11-Portable.${ext}"

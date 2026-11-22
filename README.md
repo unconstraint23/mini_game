@@ -2,6 +2,20 @@
 
 一款面向 **macOS** 与 **Windows 11** 的轻量级反应力与专注力训练桌面小游戏，内置 **4 大专业认知与反应训练场景**，采用 **下载即用、零环境依赖、全离线可用** 的独立桌面端架构（Electron + React + Three.js + Python FastAPI + SQLite）。
 
+## 直接下载（点击即下）
+
+> 所有安装包均通过 GitHub Releases 公开托管，点击下方固定链接即可始终下载最新版本：
+
+| 平台 | 文件类型 | 一键直链下载 |
+| --- | --- | --- |
+| **macOS (Apple Silicon)** | 安装镜像 `.dmg` | [下载 NeuroPulse-macOS-arm64.dmg](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-macOS-arm64.dmg) |
+| **macOS (Apple Silicon)** | 绿色压缩包 `.zip` | [下载 NeuroPulse-macOS-arm64.zip](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-macOS-arm64.zip) |
+| **Windows 11 (x64)** | 安装程序 `.exe` | [下载 NeuroPulse-Win11-Setup.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Setup.exe) |
+| **Windows 11 (x64)** | 免安装便携版 `.exe` | [下载 NeuroPulse-Win11-Portable.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Portable.exe) |
+
+- 发布页总览：[GitHub Releases (Latest)](https://github.com/unconstraint23/mini_game/releases/latest)
+- **macOS 首次打开提示**：拖入「应用程序」后若系统提示未签名，在终端执行 `xattr -cr /Applications/NeuroPulse.app` 即可打开。
+
 ## 全部 4 大训练场景
 
 | 场景 | 能力训练方向 | 核心玩法与交互 |

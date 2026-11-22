@@ -1,10 +1,18 @@
-name: Build Desktop Installers (macOS & Windows 11)
+name: Build & Publish Desktop Releases (macOS & Windows 11)
 
 on:
   workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag name (e.g. v1.1.0). Leave empty to use package.json version."
+        required: false
+        default: ""
   push:
     tags:
       - "v*"
+
+permissions:
+  contents: write
 
 jobs:
   build-macos:
@@ -35,13 +43,13 @@ jobs:
           pnpm run install:all
           pnpm run dist:mac
 
-      - name: Upload macOS artifacts
+      - name: Upload macOS build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: neuropulse-macos
           path: |
-            release/*.dmg
-            release/*.zip
+            release/NeuroPulse-macOS-*.dmg
+            release/NeuroPulse-macOS-*.zip
 
   build-windows:
     runs-on: windows-latest
@@ -74,9 +82,71 @@ jobs:
           pnpm run install:all
           pnpm run dist:win
 
-      - name: Upload Windows 11 artifacts
+      - name: Upload Windows 11 build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: neuropulse-windows11
           path: |
-            release/*.exe
+            release/NeuroPulse-Win11-*.exe
+
+  publish-release:
+    needs: [build-macos, build-windows]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all platform installers
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: List release assets
+        run: find release-assets -type f -exec ls -lh {} +
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          INPUT_TAG: ${{ inputs.tag }}
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+          elif [[ -n "${INPUT_TAG}" ]]; then
+            TAG="${INPUT_TAG}"
+          else
+            PKG_VER=$(node -p "require('./package.json').version")
+            TAG="v${PKG_VER}"
+          fi
+
+          mapfile -t ASSETS < <(find release-assets -type f \( -name '*.dmg' -o -name '*.zip' -o -name '*.exe' \) | sort)
+          if [[ ${#ASSETS[@]} -eq 0 ]]; then
+            echo "No release assets found!"
+            exit 1
+          fi
+          printf 'Uploading %s\n' "${ASSETS[@]}"
+
+          cat << 'EOF' > release-notes.md
+          ## NeuroPulse · 灵动反应训练桌面端
+
+          开箱即用、零环境依赖、全离线可用的反应力与专注力训练工具，内置 4 大核心训练场景：
+          - **场景 1**：双物听觉反应 + 中途「请换手」5 秒倒计时 + Three.js 3D 轨道互换
+          - **场景 2**：Stroop 色词抗干扰挑战（含规则动态切换与语音干扰）
+          - **场景 3**：3D 多球视觉追踪 (MOT)（Three.js 三维碰撞 + 鼠标直接拾取）
+          - **场景 4**：听觉 Go / No-Go 急停反射训练（自定义词库 + 毫秒级反应拍击）
+
+          ### 直接下载（点击即下）
+          - **macOS (Apple Silicon M1/M2/M3/M4)**：下载 `NeuroPulse-macOS-arm64.dmg`（或 `.zip`）
+          - **Windows 11 (64 位)**：下载 `NeuroPulse-Win11-Setup.exe`（安装版）或 `NeuroPulse-Win11-Portable.exe`（免安装便携版）
+
+          > **macOS 首次打开提示说明**：由于未购买 Apple 付费开发者证书，首次打开若提示“已损坏”或“无法验证开发者”，拖入 `/Applications` 后在终端执行一次 `xattr -cr /Applications/NeuroPulse.app` 即可正常打开。
+          EOF
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${ASSETS[@]}" --clobber
+            gh release edit "${TAG}" --notes-file release-notes.md --latest
+          else
+            gh release create "${TAG}" "${ASSETS[@]}" \
+              --title "NeuroPulse ${TAG} · 灵动反应训练桌面端" \
+              --notes-file release-notes.md \
+              --latest
+          fi
