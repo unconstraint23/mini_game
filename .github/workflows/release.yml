@@ -1,0 +1,82 @@
+name: Build Desktop Installers (macOS & Windows 11)
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-macos:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python backend dependencies
+        run: |
+          python3 -m venv backend/.venv
+          backend/.venv/bin/pip install -r backend/requirements.txt
+
+      - name: Run Python backend tests
+        working-directory: backend
+        run: .venv/bin/pytest -v
+
+      - name: Install Node dependencies & build macOS installer
+        run: |
+          pnpm run install:all
+          pnpm run dist:mac
+
+      - name: Upload macOS artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: neuropulse-macos
+          path: |
+            release/*.dmg
+            release/*.zip
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install Python backend dependencies
+        shell: pwsh
+        run: |
+          python -m venv backend/.venv
+          backend/.venv/Scripts/pip.exe install -r backend/requirements.txt
+
+      - name: Run Python backend tests
+        shell: pwsh
+        working-directory: backend
+        run: .venv/Scripts/pytest.exe -v
+
+      - name: Install Node dependencies & build Windows 11 installer
+        shell: pwsh
+        run: |
+          pnpm run install:all
+          pnpm run dist:win
+
+      - name: Upload Windows 11 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: neuropulse-windows11
+          path: |
+            release/*.exe

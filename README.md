@@ -1,0 +1,54 @@
+# NeuroPulse · 灵动反应训练（桌面端）
+
+一款面向 **macOS** 与 **Windows 11** 的轻量级反应力与专注力训练桌面小游戏，采用 **下载即用、零外部依赖、全离线可用** 的独立桌面端架构。
+
+## 核心功能 — 场景 1：双物听觉反应 + 中途换手训练
+
+- **自定义双手物品**：用户输入左右手真实握持的两种物品名称（如 `红球 / 蓝球`、`水杯 / 手机`），支持一键对调与本地 SQLite 预设收藏。
+- **灵活可配置时长**：默认 **2 分钟（120 秒）**，提供快捷预设与任意秒数自定义（15 秒 ~ 30 分钟）。
+- **智能防连发随机播报**：Python 后端生成防长连发（最多连续 3 次同物品）且保持均衡的随机语音指令时间轴，支持自由调节播报节奏区间。
+- **中途随机播报「请换手」+ 5 秒倒计时**：
+  - 自动在训练中段随机穿插换手节点（避开首尾区间）。
+  - 语音清晰播报「请换手」后，**立即暂停主计时器并触发 5 秒（可配置 3~12 秒）倒计时（5 → 4 → 3 → 2 → 1）**，配套语音报数、滴答音效与 3D 物体交叉换位轨道动画。
+  - 倒计时结束后播报「继续」，自动翻转左右手状态并无缝恢复反应训练。
+- **双引擎离线语音播报**：内置浏览器原生 WebSpeech + Python 本地离线 WAV 合成引擎（macOS `say` / Windows 11 SAPI），无需联网或 API Key，下载即用。
+- **Three.js 3D 视觉舞台 & 纯盲听模式**：
+  - 实时 3D 双核脉冲特效 + 换手轨道互换动画 + 耳机左右声道提示音。
+  - 一键开启「纯盲听模式」，隐藏文字与 3D 高亮，纯粹依靠听觉训练反应。
+- **本地 SQLite 专注档案**：自动保存用户配置、自定义预设与每次训练历史、评分及连续专注天数。
+
+## 技术架构
+
+| 层级 | 技术栈 |
+| --- | --- |
+| 桌面壳与打包 | Electron 35 + electron-builder（macOS `.dmg`/`.zip` + Windows 11 `.exe` 安装包/便携版） |
+| 前端界面 | React 19 + TypeScript + Vite 6 + TailwindCSS v4 + Uiverse.io 风格拟物微交互组件 |
+| 3D 动效 | Three.js 实时渲染舞台（支持开关与 WebGL 优雅降级） |
+| 本地后端 | Python 3.13 + FastAPI + Uvicorn（通过 PyInstaller 打包为免环境单文件 Sidecar） |
+| 本地数据库 | SQLite（零配置 WAL 模式，数据自动存放在系统应用数据目录） |
+
+## 快速开发运行
+
+```bash
+# 1. 安装前端与桌面端依赖
+pnpm run install:all
+
+# 2. 创建 Python 虚拟环境并安装依赖
+python3 -m venv backend/.venv
+backend/.venv/bin/pip install -r backend/requirements.txt
+
+# 3. 一键启动（Python 后端 + Vite 前端 + Electron 桌面端）
+pnpm run dev
+```
+
+## 打包独立桌面安装包（用户下载后直接运行）
+
+```bash
+# macOS (生成 .dmg 与 .zip，内置独立 Python 后端可执行文件)
+pnpm run dist:mac
+
+# Windows 11 (在 Windows 11 环境运行，生成 NSIS 安装程序与免安装便携版 .exe)
+pnpm run dist:win
+```
+
+也可直接通过仓库内置的 `.github/workflows/release.yml` 在 GitHub Actions 上一键同时构建 macOS 与 Windows 11 双端安装包。

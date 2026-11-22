@@ -1,0 +1,9 @@
+# Enforce consistent LF line endings across macOS & Windows 11
+* text=auto eol=lf
+
+*.png binary
+*.ico binary
+*.icns binary
+*.dmg binary
+*.exe binary
+*.zip binary

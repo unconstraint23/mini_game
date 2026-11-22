@@ -1,0 +1,341 @@
+/* ==========================================================================
+   Uiverse.io-Inspired Tactile & Cyber-Studio Micro-Interaction Library
+   Handcrafted for NeuroPulse Focus & Reaction Training Desktop Studio
+   ========================================================================== */
+
+.ui-drag-region {
+  -webkit-app-region: drag;
+}
+
+.ui-no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* 1. 3D Tactile Pushable Button (Uiverse signature depth press + sheen) */
+.ui-push-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+  outline-offset: 4px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: filter 220ms ease;
+}
+
+.ui-push-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  filter: grayscale(0.4);
+}
+
+.ui-push-btn__shadow {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+  background: rgba(0, 0, 0, 0.48);
+  transform: translateY(3px);
+  transition: transform 420ms cubic-bezier(0.3, 0.7, 0.4, 1);
+  filter: blur(4px);
+}
+
+.ui-push-btn__edge {
+  position: absolute;
+  inset: 0;
+  border-radius: 14px;
+}
+
+.ui-push-btn__front {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  width: 100%;
+  border-radius: 14px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  transform: translateY(-5px);
+  transition:
+    transform 420ms cubic-bezier(0.3, 0.7, 0.4, 1),
+    box-shadow 240ms ease;
+  overflow: hidden;
+}
+
+.ui-push-btn__front::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -130%;
+  width: 65%;
+  height: 100%;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.28) 50%,
+    transparent 100%
+  );
+  transform: skewX(-20deg);
+  transition: left 620ms ease;
+}
+
+.ui-push-btn:not(:disabled):hover {
+  filter: brightness(1.08);
+}
+
+.ui-push-btn:not(:disabled):hover .ui-push-btn__front {
+  transform: translateY(-6.5px);
+  transition: transform 220ms cubic-bezier(0.3, 0.7, 0.4, 1.5);
+}
+
+.ui-push-btn:not(:disabled):hover .ui-push-btn__front::after {
+  left: 150%;
+}
+
+.ui-push-btn:not(:disabled):hover .ui-push-btn__shadow {
+  transform: translateY(5px);
+}
+
+.ui-push-btn:not(:disabled):active .ui-push-btn__front {
+  transform: translateY(-1.5px);
+  transition: transform 40ms ease;
+}
+
+.ui-push-btn:not(:disabled):active .ui-push-btn__shadow {
+  transform: translateY(1px);
+  transition: transform 40ms ease;
+}
+
+/* Variants */
+.ui-push-btn--cyan .ui-push-btn__edge {
+  background: linear-gradient(90deg, #0e7490 0%, #0891b2 50%, #0e7490 100%);
+}
+.ui-push-btn--cyan .ui-push-btn__front {
+  background: linear-gradient(135deg, #22d3ee 0%, #06b6d4 52%, #0284c7 100%);
+  color: #031522;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 24px rgba(34, 211, 238, 0.35);
+}
+
+.ui-push-btn--amber .ui-push-btn__edge {
+  background: linear-gradient(90deg, #9a3412 0%, #c2410c 50%, #9a3412 100%);
+}
+.ui-push-btn--amber .ui-push-btn__front {
+  background: linear-gradient(135deg, #fbbf24 0%, #f97316 60%, #ea580c 100%);
+  color: #1c0c04;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 0 24px rgba(249, 115, 22, 0.35);
+}
+
+.ui-push-btn--rose .ui-push-btn__edge {
+  background: linear-gradient(90deg, #881337 0%, #be123c 50%, #881337 100%);
+}
+.ui-push-btn--rose .ui-push-btn__front {
+  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 60%, #e11d48 100%);
+  color: #fff5f7;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 0 22px rgba(244, 63, 94, 0.32);
+}
+
+.ui-push-btn--ghost .ui-push-btn__edge {
+  background: linear-gradient(90deg, #1e293b 0%, #334155 50%, #1e293b 100%);
+}
+.ui-push-btn--ghost .ui-push-btn__front {
+  background: linear-gradient(135deg, #1e293b 0%, #151f33 100%);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* 2. Frosted Glass Tactile Card with Animated Hover Border Sheen */
+.ui-glass-card {
+  position: relative;
+  border-radius: 20px;
+  background: linear-gradient(
+    160deg,
+    rgba(17, 26, 46, 0.86) 0%,
+    rgba(10, 16, 30, 0.92) 100%
+  );
+  border: 1px solid rgba(148, 163, 184, 0.14);
+  backdrop-filter: blur(18px);
+  box-shadow:
+    0 14px 36px -12px rgba(0, 0, 0, 0.65),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transition:
+    border-color 240ms ease,
+    box-shadow 260ms ease,
+    transform 240ms ease;
+}
+
+.ui-glass-card:hover {
+  border-color: rgba(34, 211, 238, 0.26);
+  box-shadow:
+    0 18px 42px -12px rgba(0, 0, 0, 0.72),
+    0 0 28px -12px rgba(34, 211, 238, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.09);
+}
+
+/* 3. Glowing Dual-Hand Input Field (Uiverse style) */
+.ui-glow-input-wrap {
+  position: relative;
+  border-radius: 15px;
+  padding: 1.5px;
+  background: linear-gradient(135deg, rgba(148, 163, 184, 0.22), rgba(51, 65, 85, 0.25));
+  transition: background 240ms ease, box-shadow 240ms ease;
+}
+
+.ui-glow-input-wrap--cyan:focus-within {
+  background: linear-gradient(135deg, #22d3ee, #38bdf8, #0ea5e9);
+  box-shadow: 0 0 24px -4px rgba(34, 211, 238, 0.55);
+}
+
+.ui-glow-input-wrap--amber:focus-within {
+  background: linear-gradient(135deg, #fbbf24, #f97316, #fb7185);
+  box-shadow: 0 0 24px -4px rgba(249, 115, 22, 0.55);
+}
+
+.ui-glow-input {
+  width: 100%;
+  border-radius: 13.5px;
+  background: #0a1120;
+  color: #f8fafc;
+  border: none;
+  outline: none;
+  font-weight: 600;
+}
+
+/* 4. Uiverse Springy Glow Toggle Switch */
+.ui-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 50px;
+  height: 28px;
+  border-radius: 9999px;
+  background: #172033;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  padding: 3px;
+  cursor: pointer;
+  transition:
+    background 240ms ease,
+    border-color 240ms ease,
+    box-shadow 240ms ease;
+}
+
+.ui-toggle[data-checked="true"] {
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.35), rgba(14, 165, 233, 0.5));
+  border-color: rgba(34, 211, 238, 0.75);
+  box-shadow: 0 0 18px -2px rgba(34, 211, 238, 0.45);
+}
+
+.ui-toggle__thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 9999px;
+  background: linear-gradient(145deg, #cbd5e1, #64748b);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transform: translateX(0);
+  transition:
+    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    background 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.ui-toggle[data-checked="true"] .ui-toggle__thumb {
+  transform: translateX(22px);
+  background: linear-gradient(145deg, #ffffff, #67e8f9);
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.9);
+}
+
+/* 5. Uiverse Tactile Preset Pill */
+.ui-chip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: rgba(15, 23, 42, 0.78);
+  padding: 0.36rem 0.85rem;
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  cursor: pointer;
+  transition: all 180ms ease;
+}
+
+.ui-chip:hover {
+  border-color: rgba(34, 211, 238, 0.5);
+  background: rgba(34, 211, 238, 0.12);
+  color: #f0fdfa;
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px -6px rgba(34, 211, 238, 0.35);
+}
+
+.ui-chip--active {
+  border-color: rgba(34, 211, 238, 0.8);
+  background: linear-gradient(135deg, rgba(34, 211, 238, 0.22), rgba(249, 115, 22, 0.16));
+  color: #ffffff;
+  box-shadow: 0 0 18px -4px rgba(34, 211, 238, 0.45);
+}
+
+/* 6. Concentric Radar Pulse Animation for Hand-Swap Countdown */
+@keyframes ui-radar-expand {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(1.65);
+    opacity: 0;
+  }
+}
+
+.ui-swap-radar {
+  animation: ui-radar-expand 1.4s cubic-bezier(0.16, 1, 0.3, 1) infinite;
+}
+
+.ui-swap-radar--delayed {
+  animation: ui-radar-expand 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.55s infinite;
+}
+
+@keyframes ui-cue-pop {
+  0% {
+    transform: scale(0.82);
+    opacity: 0.3;
+  }
+  55% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.ui-cue-pop {
+  animation: ui-cue-pop 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes ui-ambient-breathe {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(0.98);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.04);
+  }
+}
+
+.ui-ambient-breathe {
+  animation: ui-ambient-breathe 2.6s ease-in-out infinite;
+}

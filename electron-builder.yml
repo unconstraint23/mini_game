@@ -1,0 +1,56 @@
+appId: com.neuropulse.focus
+productName: NeuroPulse
+copyright: Copyright © 2026 NeuroPulse Studio
+directories:
+  output: release
+  buildResources: build-resources
+
+files:
+  - dist-electron/**/*
+  - frontend/dist/**/*
+  - package.json
+
+extraResources:
+  - from: build-resources/backend
+    to: backend
+    filter:
+      - "**/*"
+
+mac:
+  category: public.app-category.games
+  icon: build-resources/icon.png
+  hardenedRuntime: false
+  target:
+    - target: dmg
+      arch:
+        - arm64
+    - target: zip
+      arch:
+        - arm64
+
+dmg:
+  title: NeuroPulse 灵动反应训练
+  contents:
+    - x: 130
+      y: 220
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+
+win:
+  icon: build-resources/icon.png
+  target:
+    - target: nsis
+      arch:
+        - x64
+    - target: portable
+      arch:
+        - x64
+
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: NeuroPulse 灵动反应训练
