@@ -6,15 +6,17 @@
 
 > 所有安装包均通过 GitHub Releases 公开托管，点击下方固定链接即可始终下载最新版本：
 
-| 平台 | 文件类型 | 一键直链下载 |
+| 平台 | 文件类型 | 一键直链下载 / 打开 |
 | --- | --- | --- |
+| **iOS (iPhone / iPad) & 在线版** | 免费离线 PWA | [直接打开 NeuroPulse 网页/PWA 版](https://unconstraint23.github.io/mini_game/)（Safari 点「分享 → 添加到主屏幕」即可全屏离线使用） |
 | **Android (安卓手机/平板)** | 安装包 `.apk` | [下载 NeuroPulse-Android.apk](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Android.apk) |
 | **macOS (Apple Silicon)** | 安装镜像 `.dmg` | [下载 NeuroPulse-macOS-arm64.dmg](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-macOS-arm64.dmg) |
 | **macOS (Apple Silicon)** | 绿色压缩包 `.zip` | [下载 NeuroPulse-macOS-arm64.zip](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-macOS-arm64.zip) |
 | **Windows 11 (x64)** | 安装程序 `.exe` | [下载 NeuroPulse-Win11-Setup.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Setup.exe) |
 | **Windows 11 (x64)** | 免安装便携版 `.exe` | [下载 NeuroPulse-Win11-Portable.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Portable.exe) |
 
-- **iOS (iPhone / iPad)**：已内置 Capacitor 7 + Swift Package Manager 完整 Xcode 工程（[frontend/ios](file:///Volumes/person/person_code/tool_game/frontend/ios)），执行 `pnpm run mobile:ios` 在 Xcode 中打开即可真机安装或导出 IPA（同时兼容移动端 PWA 添加到主屏幕离线运行）。
+- **iOS 免费离线用法（无需付费开发者账号）**：用 iPhone Safari 打开 `https://unconstraint23.github.io/mini_game/` → 点击底部「分享」→「添加到主屏幕」，内置 Service Worker 缓存，断网飞行模式下也可完整离线运行全部 4 个训练场景。
+- **iOS 原生工程（可选）**：仓库也保留了 Capacitor 7 + SwiftPM Xcode 工程（[frontend/ios](file:///Volumes/person/person_code/tool_game/frontend/ios)），执行 `pnpm run mobile:ios` 可随时用 Xcode 真机调试或上架 TestFlight。
 - 发布页总览：[GitHub Releases (Latest)](https://github.com/unconstraint23/mini_game/releases/latest)
 - **macOS 首次打开提示**：安装包已内置严格深度自签名；首次从浏览器下载打开若提示“无法验证开发者”，在「系统设置 → 隐私与安全性」点击 **「仍要打开」**（或在终端执行 `xattr -cr /Applications/NeuroPulse.app`）即可正常打开。
 

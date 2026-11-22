@@ -17,6 +17,7 @@ import { speechManager } from "./services/speech";
 import { soundFx } from "./services/soundFx";
 import { SidebarNav } from "./components/SidebarNav";
 import { MobileBottomNav, MobileTopBar } from "./components/MobileNav";
+import { IosInstallBanner } from "./components/IosInstallBanner";
 import { Scene1SetupView } from "./views/Scene1SetupView";
 import { Scene1PlayView } from "./views/Scene1PlayView";
 import { Scene2StroopView } from "./views/Scene2StroopView";
@@ -356,6 +357,7 @@ export const App: React.FC = () => {
             health={health}
             stats={stats}
           />
+          <IosInstallBanner />
         </>
       )}
 

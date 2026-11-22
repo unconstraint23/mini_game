@@ -12,11 +12,19 @@ import type {
 } from "../types/game";
 import { localStore } from "./localStore";
 
-let forceLocalOfflineMode = Capacitor.isNativePlatform();
-
 function isElectronDesktop(): boolean {
   return typeof window !== "undefined" && Boolean(window.neuropulse?.isDesktop);
 }
+
+function isRemoteHttpsWeb(): boolean {
+  return (
+    typeof window !== "undefined" &&
+    window.location.protocol === "https:" &&
+    !isElectronDesktop()
+  );
+}
+
+let forceLocalOfflineMode = Capacitor.isNativePlatform() || isRemoteHttpsWeb();
 
 function getBaseUrl(): string {
   if (typeof window !== "undefined" && window.neuropulse?.apiBaseUrl) {
