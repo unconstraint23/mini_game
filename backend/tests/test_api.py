@@ -154,3 +154,73 @@ def test_native_tts_endpoint(tmp_path: Path) -> None:
         assert res.status_code == 200
         assert res.headers["content-type"].startswith("audio/wav")
         assert res.content[:4] == b"RIFF"
+
+
+def test_scene2_stroop_plan_and_session(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    res = client.post(
+        "/api/scene2/plan",
+        json={"duration_sec": 60, "mode": "mixed", "conflict_ratio": 0.85, "trial_count": 40},
+    )
+    assert res.status_code == 200
+    plan = res.json()
+    assert len(plan["trials"]) == 40
+    for t in plan["trials"]:
+        expected = t["ink_key"] if t["rule"] == "ink" else t["word_key"]
+        assert t["answer_key"] == expected
+
+    now = datetime.now(timezone.utc).isoformat()
+    save_res = client.post(
+        "/api/sessions",
+        json={
+            "scene_id": "scene_2_stroop",
+            "item_a": "色词抗干扰",
+            "item_b": "混合规则",
+            "configured_duration_sec": 60,
+            "actual_duration_sec": 60,
+            "total_cues": 38,
+            "item_a_count": 35,
+            "item_b_count": 3,
+            "swap_count_completed": 0,
+            "focus_score_override": 92,
+            "extra_metrics": {"accuracy_pct": 92, "avg_reaction_ms": 512, "max_combo": 14},
+            "started_at": now,
+            "ended_at": now,
+        },
+    )
+    assert save_res.status_code == 201
+    assert save_res.json()["focus_score"] == 92
+    filtered = client.get("/api/sessions?scene_id=scene_2_stroop").json()
+    assert len(filtered) == 1
+    assert filtered[0]["extra_metrics"]["avg_reaction_ms"] == 512
+
+
+def test_scene4_gonogo_plan_rules(tmp_path: Path) -> None:
+    client = make_client(tmp_path)
+    res = client.post(
+        "/api/scene4/plan",
+        json={
+            "go_words": ["拍手", "出拳"],
+            "nogo_words": ["停", "别动"],
+            "duration_sec": 60,
+            "min_interval_ms": 1300,
+            "max_interval_ms": 2000,
+            "nogo_ratio": 0.3,
+            "response_window_ms": 1100,
+        },
+    )
+    assert res.status_code == 200
+    plan = res.json()
+    assert plan["go_count"] >= 2
+    assert plan["nogo_count"] >= 1
+    assert plan["events"][0]["kind"] == "go"
+    assert plan["events"][1]["kind"] == "go"
+
+    nogo_streak = 0
+    for ev in plan["events"]:
+        if ev["kind"] == "nogo":
+            nogo_streak += 1
+        else:
+            nogo_streak = 0
+        assert nogo_streak <= 2
+

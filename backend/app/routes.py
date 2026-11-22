@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 import platform
 from datetime import date, datetime, timedelta, timezone
 from fastapi import APIRouter, HTTPException, Response
 
 from .database import Database
-from .scheduler import generate_scene1_plan
+from .scheduler import generate_scene1_plan, generate_scene2_plan, generate_scene4_plan
 from .schemas import (
     DailyActivity,
     HealthResponse,
@@ -13,6 +14,10 @@ from .schemas import (
     PresetOut,
     Scene1PlanRequest,
     Scene1PlanResponse,
+    Scene2PlanRequest,
+    Scene2PlanResponse,
+    Scene4PlanRequest,
+    Scene4PlanResponse,
     SessionCreate,
     SessionOut,
     StatsOverview,
@@ -30,7 +35,7 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
     def health() -> HealthResponse:
         return HealthResponse(
             status="ok",
-            version="1.0.0",
+            version="1.1.0",
             platform=platform.system().lower(),
             native_tts_available=tts.is_available,
             db_path=str(db.db_path),
@@ -184,15 +189,28 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
     def create_scene1_plan(payload: Scene1PlanRequest) -> Scene1PlanResponse:
         return generate_scene1_plan(payload)
 
+    @router.post("/api/scene2/plan", response_model=Scene2PlanResponse)
+    def create_scene2_plan(payload: Scene2PlanRequest) -> Scene2PlanResponse:
+        return generate_scene2_plan(payload)
+
+    @router.post("/api/scene4/plan", response_model=Scene4PlanResponse)
+    def create_scene4_plan(payload: Scene4PlanRequest) -> Scene4PlanResponse:
+        return generate_scene4_plan(payload)
+
     @router.post("/api/sessions", response_model=SessionOut, status_code=201)
     def save_session(payload: SessionCreate) -> SessionOut:
-        completion_ratio = (
-            min(1.0, payload.actual_duration_sec / max(1, payload.configured_duration_sec))
-        )
-        base_score = int(round(completion_ratio * 85))
-        bonus = 10 if payload.completed else 0
-        blind_bonus = 5 if payload.blind_mode and payload.completed else 0
-        focus_score = min(100, max(10, base_score + bonus + blind_bonus))
+        if payload.focus_score_override is not None:
+            focus_score = min(100, max(0, int(payload.focus_score_override)))
+        else:
+            completion_ratio = min(
+                1.0, payload.actual_duration_sec / max(1, payload.configured_duration_sec)
+            )
+            base_score = int(round(completion_ratio * 85))
+            bonus = 10 if payload.completed else 0
+            blind_bonus = 5 if payload.blind_mode and payload.completed else 0
+            focus_score = min(100, max(10, base_score + bonus + blind_bonus))
+
+        metrics_json = json.dumps(payload.extra_metrics or {}, ensure_ascii=False)
 
         with db.connect() as conn:
             cur = conn.execute(
@@ -204,8 +222,8 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
                     swap_count_completed, swap_countdown_sec,
                     min_interval_ms, max_interval_ms,
                     blind_mode, completed, focus_score,
-                    started_at, ended_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    extra_metrics, started_at, ended_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     payload.scene_id,
@@ -223,6 +241,7 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
                     int(payload.blind_mode),
                     int(payload.completed),
                     focus_score,
+                    metrics_json,
                     payload.started_at,
                     payload.ended_at,
                 ),
@@ -236,40 +255,61 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
         )
 
     @router.get("/api/sessions", response_model=list[SessionOut])
-    def list_sessions(limit: int = 50) -> list[SessionOut]:
+    def list_sessions(limit: int = 50, scene_id: str | None = None) -> list[SessionOut]:
         safe_limit = max(1, min(200, limit))
         with db.connect() as conn:
-            rows = conn.execute(
-                """
-                SELECT * FROM training_sessions
-                ORDER BY ended_at DESC, id DESC
-                LIMIT ?
-                """,
-                (safe_limit,),
-            ).fetchall()
-        return [
-            SessionOut(
-                id=r["id"],
-                scene_id=r["scene_id"],
-                item_a=r["item_a"],
-                item_b=r["item_b"],
-                configured_duration_sec=r["configured_duration_sec"],
-                actual_duration_sec=r["actual_duration_sec"],
-                total_cues=r["total_cues"],
-                item_a_count=r["item_a_count"],
-                item_b_count=r["item_b_count"],
-                swap_count_completed=r["swap_count_completed"],
-                swap_countdown_sec=r["swap_countdown_sec"],
-                min_interval_ms=r["min_interval_ms"],
-                max_interval_ms=r["max_interval_ms"],
-                blind_mode=bool(r["blind_mode"]),
-                completed=bool(r["completed"]),
-                focus_score=r["focus_score"],
-                started_at=r["started_at"],
-                ended_at=r["ended_at"],
+            if scene_id:
+                rows = conn.execute(
+                    """
+                    SELECT * FROM training_sessions
+                    WHERE scene_id = ?
+                    ORDER BY ended_at DESC, id DESC
+                    LIMIT ?
+                    """,
+                    (scene_id, safe_limit),
+                ).fetchall()
+            else:
+                rows = conn.execute(
+                    """
+                    SELECT * FROM training_sessions
+                    ORDER BY ended_at DESC, id DESC
+                    LIMIT ?
+                    """,
+                    (safe_limit,),
+                ).fetchall()
+
+        results: list[SessionOut] = []
+        for r in rows:
+            try:
+                extra = json.loads(r["extra_metrics"] or "{}")
+                if not isinstance(extra, dict):
+                    extra = {}
+            except Exception:
+                extra = {}
+            results.append(
+                SessionOut(
+                    id=r["id"],
+                    scene_id=r["scene_id"],
+                    item_a=r["item_a"],
+                    item_b=r["item_b"],
+                    configured_duration_sec=r["configured_duration_sec"],
+                    actual_duration_sec=r["actual_duration_sec"],
+                    total_cues=r["total_cues"],
+                    item_a_count=r["item_a_count"],
+                    item_b_count=r["item_b_count"],
+                    swap_count_completed=r["swap_count_completed"],
+                    swap_countdown_sec=r["swap_countdown_sec"],
+                    min_interval_ms=r["min_interval_ms"],
+                    max_interval_ms=r["max_interval_ms"],
+                    blind_mode=bool(r["blind_mode"]),
+                    completed=bool(r["completed"]),
+                    focus_score=r["focus_score"],
+                    extra_metrics=extra,
+                    started_at=r["started_at"],
+                    ended_at=r["ended_at"],
+                )
             )
-            for r in rows
-        ]
+        return results
 
     @router.delete("/api/sessions/{session_id}")
     def delete_session(session_id: int) -> dict[str, bool]:
@@ -317,7 +357,6 @@ def create_router(db: Database, tts: NativeTtsService) -> APIRouter:
             entry["duration_sec"] += int(r["actual_duration_sec"])
             entry["cues"] += int(r["total_cues"])
 
-        # Compute consecutive training streak up to today (or yesterday if not trained yet today)
         streak = 0
         cursor = today if today in active_dates else today - timedelta(days=1)
         while cursor in active_dates:

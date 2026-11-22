@@ -1,7 +1,7 @@
 import React from "react";
 
 interface PushButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "cyan" | "amber" | "rose" | "ghost";
+  variant?: "cyan" | "amber" | "rose" | "ghost" | "emerald" | "gold" | "violet";
   size?: "sm" | "md" | "lg";
   fullWidth?: boolean;
   children: React.ReactNode;

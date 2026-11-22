@@ -2,6 +2,8 @@ import type {
   HealthResponse,
   ItemPreset,
   Scene1Plan,
+  Scene2Plan,
+  Scene4Plan,
   SessionPayload,
   StatsOverview,
   TrainingSession,
@@ -81,14 +83,43 @@ export const api = {
       body: JSON.stringify(payload),
     }),
 
+  createScene2Plan: (payload: {
+    duration_sec: number;
+    mode: "ink" | "mixed";
+    conflict_ratio: number;
+    trial_count?: number;
+  }) =>
+    requestJson<Scene2Plan>("/api/scene2/plan", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
+  createScene4Plan: (payload: {
+    go_words: string[];
+    nogo_words: string[];
+    duration_sec: number;
+    min_interval_ms: number;
+    max_interval_ms: number;
+    nogo_ratio: number;
+    response_window_ms: number;
+  }) =>
+    requestJson<Scene4Plan>("/api/scene4/plan", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }),
+
   saveSession: (payload: SessionPayload) =>
     requestJson<TrainingSession>("/api/sessions", {
       method: "POST",
       body: JSON.stringify(payload),
     }),
 
-  listSessions: (limit = 50) =>
-    requestJson<TrainingSession[]>(`/api/sessions?limit=${limit}`),
+  listSessions: (limit = 50, sceneId?: string) => {
+    const query = sceneId
+      ? `?limit=${limit}&scene_id=${encodeURIComponent(sceneId)}`
+      : `?limit=${limit}`;
+    return requestJson<TrainingSession[]>(`/api/sessions${query}`);
+  },
 
   deleteSession: (sessionId: number) =>
     requestJson<{ deleted: boolean }>(`/api/sessions/${sessionId}`, {

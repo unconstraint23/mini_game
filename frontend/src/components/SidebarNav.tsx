@@ -3,10 +3,13 @@ import {
   Activity,
   BarChart3,
   Cpu,
+  Eye,
   Flame,
   FolderOpen,
   Grid2x2,
+  Palette,
   Sparkles,
+  Timer,
 } from "lucide-react";
 import type { AppView, HealthResponse, StatsOverview } from "../types/game";
 
@@ -29,24 +32,55 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
     typeof window !== "undefined" &&
     (window.neuropulse?.platform === "darwin" || navigator.platform.toLowerCase().includes("mac"));
 
-  const navItems: { id: AppView; label: string; sub: string; icon: React.ReactNode }[] = [
+  const sceneItems: {
+    id: AppView;
+    label: string;
+    sub: string;
+    icon: React.ReactNode;
+    accent: string;
+  }[] = [
     {
       id: "scene1",
       label: "场景 1 · 双物反应",
       sub: "听觉播报 + 换手倒计时",
       icon: <Activity className="w-4 h-4" />,
+      accent: "text-cyan-300 bg-cyan-400/20",
+    },
+    {
+      id: "scene2",
+      label: "场景 2 · Stroop",
+      sub: "色词抗干扰 · 冲动抑制",
+      icon: <Palette className="w-4 h-4" />,
+      accent: "text-fuchsia-300 bg-fuchsia-400/20",
+    },
+    {
+      id: "scene3",
+      label: "场景 3 · 3D 追踪",
+      sub: "Three.js 多球空间追踪",
+      icon: <Eye className="w-4 h-4" />,
+      accent: "text-sky-300 bg-sky-400/20",
+    },
+    {
+      id: "scene4",
+      label: "场景 4 · 听觉急停",
+      sub: "Go / No-Go 急停反射",
+      icon: <Timer className="w-4 h-4" />,
+      accent: "text-amber-300 bg-amber-400/20",
+    },
+  ];
+
+  const toolItems: { id: AppView; label: string; sub: string; icon: React.ReactNode }[] = [
+    {
+      id: "scenes",
+      label: "训练场景库",
+      sub: "全部 4 个专注力模块",
+      icon: <Grid2x2 className="w-4 h-4" />,
     },
     {
       id: "history",
       label: "训练记录与统计",
       sub: "SQLite 本地专注档案",
       icon: <BarChart3 className="w-4 h-4" />,
-    },
-    {
-      id: "scenes",
-      label: "训练场景库",
-      sub: "更多专注力模块扩展",
-      icon: <Grid2x2 className="w-4 h-4" />,
     },
   ];
 
@@ -55,7 +89,7 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
   return (
     <aside className="w-64 shrink-0 h-full flex flex-col border-r border-slate-800/80 bg-[#090F1E]/95 backdrop-blur-xl select-none">
       {/* Draggable header with macOS traffic light clearance */}
-      <div className={`ui-drag-region px-5 ${isMac ? "pt-11" : "pt-5"} pb-5 border-b border-slate-800/70`}>
+      <div className={`ui-drag-region px-5 ${isMac ? "pt-11" : "pt-5"} pb-4 border-b border-slate-800/70`}>
         <div className="flex items-center gap-3">
           <div className="relative w-10 h-10 rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-orange-500 p-[1.5px] shadow-[0_0_24px_-4px_rgba(34,211,238,0.6)]">
             <div className="w-full h-full rounded-[14.5px] bg-slate-950 flex items-center justify-center">
@@ -72,37 +106,78 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       </div>
 
       {/* Navigation items */}
-      <nav className="flex-1 px-3 py-4 space-y-1.5 overflow-y-auto">
-        {navItems.map((item) => {
-          const active = activeView === item.id;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              disabled={disabled}
-              onClick={() => onSelectView(item.id)}
-              className={`ui-no-drag w-full flex items-center gap-3 px-3.5 py-3 rounded-2xl text-left transition-all duration-200 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
-                active
-                  ? "bg-gradient-to-r from-cyan-500/20 via-sky-500/12 to-transparent text-white border border-cyan-400/40 shadow-[0_0_20px_-6px_rgba(34,211,238,0.45)]"
-                  : "text-slate-400 border border-transparent hover:bg-slate-800/50 hover:text-slate-100"
-              }`}
-            >
-              <span
-                className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-                  active
-                    ? "bg-cyan-400/20 text-cyan-300"
-                    : "bg-slate-900/90 text-slate-400"
-                }`}
-              >
-                {item.icon}
-              </span>
-              <div className="min-w-0">
-                <div className="text-sm font-semibold truncate">{item.label}</div>
-                <div className="text-[11px] text-slate-500 truncate">{item.sub}</div>
-              </div>
-            </button>
-          );
-        })}
+      <nav className="flex-1 px-3 py-3.5 space-y-4 overflow-y-auto">
+        <div>
+          <div className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            训练场景
+          </div>
+          <div className="space-y-1">
+            {sceneItems.map((item) => {
+              const active = activeView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onSelectView(item.id)}
+                  className={`ui-no-drag w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all duration-200 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
+                    active
+                      ? "bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-white border border-cyan-400/40 shadow-[0_0_20px_-6px_rgba(34,211,238,0.4)]"
+                      : "text-slate-400 border border-transparent hover:bg-slate-800/50 hover:text-slate-100"
+                  }`}
+                >
+                  <span
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      active ? item.accent : "bg-slate-900/90 text-slate-400"
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold truncate">{item.label}</div>
+                    <div className="text-[10px] text-slate-500 truncate">{item.sub}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <div className="px-3 mb-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            总览与档案
+          </div>
+          <div className="space-y-1">
+            {toolItems.map((item) => {
+              const active = activeView === item.id;
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={disabled}
+                  onClick={() => onSelectView(item.id)}
+                  className={`ui-no-drag w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl text-left transition-all duration-200 cursor-pointer disabled:opacity-45 disabled:cursor-not-allowed ${
+                    active
+                      ? "bg-gradient-to-r from-cyan-500/20 via-sky-500/10 to-transparent text-white border border-cyan-400/40 shadow-[0_0_20px_-6px_rgba(34,211,238,0.4)]"
+                      : "text-slate-400 border border-transparent hover:bg-slate-800/50 hover:text-slate-100"
+                  }`}
+                >
+                  <span
+                    className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
+                      active ? "bg-cyan-400/20 text-cyan-300" : "bg-slate-900/90 text-slate-400"
+                    }`}
+                  >
+                    {item.icon}
+                  </span>
+                  <div className="min-w-0">
+                    <div className="text-[13px] font-semibold truncate">{item.label}</div>
+                    <div className="text-[10px] text-slate-500 truncate">{item.sub}</div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
       </nav>
 
       {/* Streak & Backend Status Footer */}
@@ -114,7 +189,8 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
               <span>连续专注</span>
             </div>
             <span className="text-lg font-black tabular-nums text-white">
-              {stats?.streak_days ?? 0} <span className="text-xs font-normal text-slate-400">天</span>
+              {stats?.streak_days ?? 0}{" "}
+              <span className="text-xs font-normal text-slate-400">天</span>
             </span>
           </div>
           <div className="mt-2 flex items-center justify-between text-[11px] text-slate-400">

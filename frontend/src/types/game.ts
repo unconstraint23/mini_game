@@ -1,5 +1,45 @@
 export type TtsEngineMode = "auto" | "webspeech" | "native";
 
+export type SceneId =
+  | "scene_1_dual_object"
+  | "scene_2_stroop"
+  | "scene_3_mot_3d"
+  | "scene_4_gonogo";
+
+export interface SceneMetaInfo {
+  id: SceneId;
+  shortTag: string;
+  title: string;
+  badgeClass: string;
+}
+
+export const SCENE_META: Record<SceneId, SceneMetaInfo> = {
+  scene_1_dual_object: {
+    id: "scene_1_dual_object",
+    shortTag: "场景 1 · 双物反应",
+    title: "双物听觉反应 + 换手训练",
+    badgeClass: "bg-cyan-500/15 border-cyan-400/35 text-cyan-200",
+  },
+  scene_2_stroop: {
+    id: "scene_2_stroop",
+    shortTag: "场景 2 · Stroop",
+    title: "Stroop 色词抗干扰挑战",
+    badgeClass: "bg-fuchsia-500/15 border-fuchsia-400/35 text-fuchsia-200",
+  },
+  scene_3_mot_3d: {
+    id: "scene_3_mot_3d",
+    shortTag: "场景 3 · 3D追踪",
+    title: "3D 多球视觉追踪 (MOT)",
+    badgeClass: "bg-sky-500/15 border-sky-400/35 text-sky-200",
+  },
+  scene_4_gonogo: {
+    id: "scene_4_gonogo",
+    shortTag: "场景 4 · 急停反射",
+    title: "听觉 Go / No-Go 急停反射",
+    badgeClass: "bg-amber-500/15 border-amber-400/35 text-amber-200",
+  },
+};
+
 export interface HealthResponse {
   status: string;
   version: string;
@@ -57,6 +97,45 @@ export interface Scene1Plan {
   events: CueEvent[];
 }
 
+// Scene 2: Stroop
+export type ColorKey = "red" | "blue" | "green" | "yellow";
+
+export interface StroopTrial {
+  seq: number;
+  word_key: ColorKey;
+  word_text: string;
+  ink_key: ColorKey;
+  rule: "ink" | "word";
+  answer_key: ColorKey;
+  is_conflict: boolean;
+  distractor_speak: string;
+}
+
+export interface Scene2Plan {
+  plan_id: string;
+  mode: "ink" | "mixed";
+  duration_sec: number;
+  trials: StroopTrial[];
+}
+
+// Scene 4: Go / No-Go
+export interface GoNoGoEvent {
+  seq: number;
+  at_ms: number;
+  kind: "go" | "nogo";
+  word: string;
+  response_window_ms: number;
+}
+
+export interface Scene4Plan {
+  plan_id: string;
+  duration_sec: number;
+  response_window_ms: number;
+  go_count: number;
+  nogo_count: number;
+  events: GoNoGoEvent[];
+}
+
 export interface SessionPayload {
   scene_id: string;
   item_a: string;
@@ -72,6 +151,8 @@ export interface SessionPayload {
   max_interval_ms: number;
   blind_mode: boolean;
   completed: boolean;
+  focus_score_override?: number;
+  extra_metrics?: Record<string, number | string | boolean>;
   started_at: string;
   ended_at: string;
 }
@@ -100,7 +181,7 @@ export interface StatsOverview {
   recent_7_days: DailyActivity[];
 }
 
-export type AppView = "scene1" | "history" | "scenes";
+export type AppView = "scene1" | "scene2" | "scene3" | "scene4" | "history" | "scenes";
 
 export type PlayPhase = "idle" | "ready" | "playing" | "swapping" | "paused" | "completed";
 

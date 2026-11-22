@@ -17,11 +17,14 @@ import { soundFx } from "./services/soundFx";
 import { SidebarNav } from "./components/SidebarNav";
 import { Scene1SetupView } from "./views/Scene1SetupView";
 import { Scene1PlayView } from "./views/Scene1PlayView";
+import { Scene2StroopView } from "./views/Scene2StroopView";
+import { Scene3MotView } from "./views/Scene3MotView";
+import { Scene4GoNoGoView } from "./views/Scene4GoNoGoView";
 import { SessionSummaryModal } from "./views/SessionSummaryModal";
 import { HistoryView } from "./views/HistoryView";
 import { ScenesHubView } from "./views/ScenesHubView";
 
-/** Client-side fallback plan generator if the local Python backend is temporarily restarting */
+/** Client-side fallback plan generator for Scene 1 */
 function buildFallbackPlan(s: UserSettings): Scene1Plan {
   const totalMs = s.duration_sec * 1000;
   const maxSaneSwaps = Math.max(0, Math.floor((s.duration_sec - 12) / 18));
@@ -105,6 +108,7 @@ export const App: React.FC = () => {
   const [sessions, setSessions] = useState<TrainingSession[]>([]);
 
   const [activePlan, setActivePlan] = useState<Scene1Plan | null>(null);
+  const [subScenePlaying, setSubScenePlaying] = useState(false);
   const [isStarting, setIsStarting] = useState(false);
   const [summarySession, setSummarySession] = useState<TrainingSession | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -125,7 +129,7 @@ export const App: React.FC = () => {
         api.getSettings(),
         api.listPresets(),
         api.getStats(),
-        api.listSessions(50),
+        api.listSessions(60),
       ]);
       setHealth(h);
       setSettings(s);
@@ -138,7 +142,6 @@ export const App: React.FC = () => {
     }
   }, []);
 
-  // Poll briefly until local Python backend comes online
   useEffect(() => {
     let active = true;
     let attempts = 0;
@@ -204,7 +207,7 @@ export const App: React.FC = () => {
     [showToast]
   );
 
-  const startTraining = useCallback(
+  const startScene1Training = useCallback(
     async (overrideSettings?: UserSettings) => {
       const cfg = overrideSettings ?? settings;
       const itemA = cfg.item_a.trim();
@@ -235,7 +238,6 @@ export const App: React.FC = () => {
           plan = buildFallbackPlan(cfg);
         }
 
-        // Prewarm offline native WAV speech cache when active
         const countdownWords = Array.from(
           { length: cfg.swap_countdown_sec },
           (_, i) => String(i + 1)
@@ -260,30 +262,28 @@ export const App: React.FC = () => {
     [settings, health, showToast]
   );
 
-  const handleFinishSession = useCallback(
-    async (payload: SessionPayload) => {
-      setActivePlan(null);
-      try {
-        const saved = await api.saveSession(payload);
-        setSummarySession(saved);
-        const [st, list] = await Promise.all([api.getStats(), api.listSessions(50)]);
-        setStats(st);
-        setSessions(list);
-      } catch {
-        setSummarySession({
-          ...payload,
-          id: Date.now(),
-          focus_score: payload.completed ? 95 : 75,
-        });
-      }
-    },
-    []
-  );
+  const handleFinishAnySession = useCallback(async (payload: SessionPayload) => {
+    setActivePlan(null);
+    setSubScenePlaying(false);
+    try {
+      const saved = await api.saveSession(payload);
+      setSummarySession(saved);
+      const [st, list] = await Promise.all([api.getStats(), api.listSessions(60)]);
+      setStats(st);
+      setSessions(list);
+    } catch {
+      setSummarySession({
+        ...payload,
+        id: Date.now(),
+        focus_score: payload.focus_score_override ?? (payload.completed ? 95 : 75),
+      });
+    }
+  }, []);
 
   const handleDeleteSession = useCallback(
     async (sessionId: number) => {
       await api.deleteSession(sessionId);
-      const [st, list] = await Promise.all([api.getStats(), api.listSessions(50)]);
+      const [st, list] = await Promise.all([api.getStats(), api.listSessions(60)]);
       setStats(st);
       setSessions(list);
       showToast("已删除该条训练记录");
@@ -311,27 +311,30 @@ export const App: React.FC = () => {
     [settings, showToast]
   );
 
-  const isPlaying = Boolean(activePlan);
+  const isPlayingAny = Boolean(activePlan) || subScenePlaying;
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-[#070B14] text-slate-100">
-      {!isPlaying && (
+      {!isPlayingAny && (
         <SidebarNav
           activeView={activeView}
-          onSelectView={setActiveView}
-          disabled={isPlaying}
+          onSelectView={(v) => {
+            setSummarySession(null);
+            setActiveView(v);
+          }}
+          disabled={isPlayingAny}
           health={health}
           stats={stats}
         />
       )}
 
       <main className="relative flex-1 h-full overflow-hidden">
-        {isPlaying && activePlan ? (
+        {activePlan ? (
           <Scene1PlayView
             plan={activePlan}
             settings={settings}
             nativeTtsAvailable={Boolean(health?.native_tts_available)}
-            onFinish={handleFinishSession}
+            onFinish={handleFinishAnySession}
             onCancel={() => setActivePlan(null)}
           />
         ) : activeView === "scene1" ? (
@@ -341,26 +344,47 @@ export const App: React.FC = () => {
             health={health}
             isStarting={isStarting}
             onUpdateSettings={handleUpdateSettings}
-            onStartTraining={() => void startTraining()}
+            onStartTraining={() => void startScene1Training()}
             onCreatePreset={handleCreatePreset}
             onSelectPreset={handleSelectPreset}
             onDeletePreset={handleDeletePreset}
+          />
+        ) : activeView === "scene2" ? (
+          <Scene2StroopView
+            settings={settings}
+            nativeTtsAvailable={Boolean(health?.native_tts_available)}
+            onPlayingChange={setSubScenePlaying}
+            onSessionComplete={handleFinishAnySession}
+          />
+        ) : activeView === "scene3" ? (
+          <Scene3MotView
+            settings={settings}
+            onPlayingChange={setSubScenePlaying}
+            onSessionComplete={handleFinishAnySession}
+          />
+        ) : activeView === "scene4" ? (
+          <Scene4GoNoGoView
+            settings={settings}
+            nativeTtsAvailable={Boolean(health?.native_tts_available)}
+            onPlayingChange={setSubScenePlaying}
+            onSessionComplete={handleFinishAnySession}
           />
         ) : activeView === "history" ? (
           <HistoryView
             stats={stats}
             sessions={sessions}
             onReplayConfig={handleReplayHistoryConfig}
+            onJumpScene={setActiveView}
             onDeleteSession={handleDeleteSession}
           />
         ) : (
-          <ScenesHubView onOpenScene1={() => setActiveView("scene1")} />
+          <ScenesHubView onSelectScene={setActiveView} />
         )}
       </main>
 
       <SessionSummaryModal
         session={summarySession}
-        onReplay={() => void startTraining()}
+        onReplay={() => void startScene1Training()}
         onBackToSetup={() => setSummarySession(null)}
         onViewHistory={() => {
           setSummarySession(null);

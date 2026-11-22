@@ -97,6 +97,7 @@ class Database:
                     blind_mode INTEGER NOT NULL DEFAULT 0,
                     completed INTEGER NOT NULL DEFAULT 1,
                     focus_score INTEGER NOT NULL DEFAULT 100,
+                    extra_metrics TEXT NOT NULL DEFAULT '{}',
                     started_at TEXT NOT NULL,
                     ended_at TEXT NOT NULL
                 );
@@ -105,6 +106,16 @@ class Database:
                 ON training_sessions (ended_at DESC);
                 """
             )
+
+            # Safe online schema migration for existing SQLite databases
+            columns = {
+                row["name"]
+                for row in conn.execute("PRAGMA table_info(training_sessions)").fetchall()
+            }
+            if "extra_metrics" not in columns:
+                conn.execute(
+                    "ALTER TABLE training_sessions ADD COLUMN extra_metrics TEXT NOT NULL DEFAULT '{}'"
+                )
 
             settings_row = conn.execute(
                 "SELECT id FROM user_settings WHERE id = 1"
