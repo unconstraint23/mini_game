@@ -6,7 +6,7 @@ from pydantic import BaseModel, Field, model_validator
 
 class HealthResponse(BaseModel):
     status: str = "ok"
-    version: str = "1.1.0"
+    version: str = "1.1.2"
     platform: str
     native_tts_available: bool
     db_path: str

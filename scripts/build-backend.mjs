@@ -11,13 +11,16 @@ const stageDistDir = path.join(backendDir, "dist");
 const cacheDir = path.join(backendDir, "build", ".pyinstaller-cache");
 
 const isWin = process.platform === "win32";
+const isMac = process.platform === "darwin";
 const pyinstallerBin = isWin
   ? path.join(backendDir, ".venv", "Scripts", "pyinstaller.exe")
   : path.join(backendDir, ".venv", "bin", "pyinstaller");
 
 const cmd = fs.existsSync(pyinstallerBin) ? pyinstallerBin : "pyinstaller";
 
-console.log(`[build-backend] Building standalone Python sidecar (onedir) via ${cmd}...`);
+console.log(
+  `[build-backend] Building standalone Python sidecar (${isMac ? "onefile" : "onedir"}) via ${cmd}...`
+);
 fs.rmSync(outputDir, { recursive: true, force: true });
 fs.rmSync(stageDistDir, { recursive: true, force: true });
 fs.mkdirSync(cacheDir, { recursive: true });
@@ -48,20 +51,31 @@ if (res.status !== 0) {
   process.exit(res.status ?? 1);
 }
 
-const builtBundleDir = path.join(stageDistDir, "neuropulse-backend");
-if (!fs.existsSync(builtBundleDir)) {
-  console.error(`[build-backend] Expected bundle dir not found: ${builtBundleDir}`);
-  process.exit(1);
-}
-
-fs.mkdirSync(path.dirname(outputDir), { recursive: true });
-fs.cpSync(builtBundleDir, outputDir, { recursive: true });
-
+fs.mkdirSync(outputDir, { recursive: true });
 const binName = isWin ? "neuropulse-backend.exe" : "neuropulse-backend";
-const builtFile = path.join(outputDir, binName);
-if (!fs.existsSync(builtFile)) {
-  console.error(`[build-backend] Expected binary not found: ${builtFile}`);
-  process.exit(1);
-}
 
-console.log(`[build-backend] Ready at ${builtFile}`);
+if (isMac) {
+  const onefileBin = path.join(stageDistDir, binName);
+  if (!fs.existsSync(onefileBin)) {
+    console.error(`[build-backend] Expected onefile binary not found: ${onefileBin}`);
+    process.exit(1);
+  }
+  const dest = path.join(outputDir, binName);
+  fs.copyFileSync(onefileBin, dest);
+  fs.chmodSync(dest, 0o755);
+  const sizeMb = (fs.statSync(dest).size / (1024 * 1024)).toFixed(1);
+  console.log(`[build-backend] Ready at ${dest} (${sizeMb} MB)`);
+} else {
+  const builtBundleDir = path.join(stageDistDir, "neuropulse-backend");
+  if (!fs.existsSync(builtBundleDir)) {
+    console.error(`[build-backend] Expected bundle dir not found: ${builtBundleDir}`);
+    process.exit(1);
+  }
+  fs.cpSync(builtBundleDir, outputDir, { recursive: true });
+  const builtFile = path.join(outputDir, binName);
+  if (!fs.existsSync(builtFile)) {
+    console.error(`[build-backend] Expected binary not found: ${builtFile}`);
+    process.exit(1);
+  }
+  console.log(`[build-backend] Ready at ${builtFile}`);
+}

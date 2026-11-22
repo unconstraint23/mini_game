@@ -14,7 +14,7 @@
 | **Windows 11 (x64)** | 免安装便携版 `.exe` | [下载 NeuroPulse-Win11-Portable.exe](https://github.com/unconstraint23/mini_game/releases/latest/download/NeuroPulse-Win11-Portable.exe) |
 
 - 发布页总览：[GitHub Releases (Latest)](https://github.com/unconstraint23/mini_game/releases/latest)
-- **macOS 首次打开提示**：拖入「应用程序」后若系统提示未签名，在终端执行 `xattr -cr /Applications/NeuroPulse.app` 即可打开。
+- **macOS 首次打开提示**：安装包已内置严格深度自签名；首次从浏览器下载打开若提示“无法验证开发者”，在「系统设置 → 隐私与安全性」点击 **「仍要打开」**（或在终端执行 `xattr -cr /Applications/NeuroPulse.app`）即可正常打开。
 
 ## 全部 4 大训练场景
 

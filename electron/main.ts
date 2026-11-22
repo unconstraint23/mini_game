@@ -126,6 +126,10 @@ async function ensureBackendRunning(): Promise<string> {
     },
   });
 
+  backendProcess.on("error", (err) => {
+    console.error("[NeuroPulse] Failed to spawn backend process:", err);
+  });
+
   backendProcess.on("exit", (code) => {
     backendProcess = null;
     if (code !== 0 && code !== null) {

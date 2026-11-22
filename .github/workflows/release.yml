@@ -159,7 +159,7 @@ jobs:
           - **macOS (Apple Silicon M1/M2/M3/M4)**：下载 `NeuroPulse-macOS-arm64.dmg`（或 `.zip`）
           - **Windows 11 (64 位)**：下载 `NeuroPulse-Win11-Setup.exe`（安装版）或 `NeuroPulse-Win11-Portable.exe`（免安装便携版）
 
-          > **macOS 首次打开提示说明**：由于未购买 Apple 付费开发者证书，首次打开若提示“已损坏”或“无法验证开发者”，拖入 `/Applications` 后在终端执行一次 `xattr -cr /Applications/NeuroPulse.app` 即可正常打开。
+          > **macOS 首次打开提示说明**：本安装包已通过苹果 `codesign --verify --deep --strict` 深度完整性自签名校验。由于开源个人项目未使用 Apple 付费开发者公证证书，从浏览器下载首次打开时若系统弹出“无法验证开发者”，在「系统设置 → 隐私与安全性」底部点击 **「仍要打开」**（或在终端执行 `xattr -cr /Applications/NeuroPulse.app`）即可直接打开使用。
           EOF
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
