@@ -149,7 +149,7 @@ def generate_scene2_plan(req: Scene2PlanRequest) -> Scene2PlanResponse:
                 break
 
         prev_pair = (word_key, ink_key)
-        rule = "ink" if req.mode == "ink" else ("ink" if rng.random() < 0.65 else "word")
+        rule = "ink" if req.mode == "ink" else ("ink" if rng.random() < 0.5 else "word")
         answer_key = ink_key if rule == "ink" else word_key
 
         # Distractor voice intentionally speaks a conflicting color name!

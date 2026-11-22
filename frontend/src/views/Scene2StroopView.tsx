@@ -5,11 +5,12 @@ import {
   Keyboard,
   Palette,
   Play,
+  RefreshCw,
   Sparkles,
   Square,
+  Type,
   Volume2,
   XCircle,
-  Zap,
 } from "lucide-react";
 import type {
   ColorKey,
@@ -105,7 +106,7 @@ function buildFallbackStroopPlan(
       if (`${wordKey}-${inkKey}` !== prev) break;
     }
     prev = `${wordKey}-${inkKey}`;
-    const rule: "ink" | "word" = mode === "ink" ? "ink" : Math.random() < 0.65 ? "ink" : "word";
+    const rule: "ink" | "word" = mode === "ink" ? "ink" : Math.random() < 0.5 ? "ink" : "word";
     const answerKey = rule === "ink" ? inkKey : wordKey;
     const distractors = COLOR_ORDER.filter((c) => c !== answerKey);
     const distractorKey = distractors[Math.floor(Math.random() * distractors.length)];
@@ -155,6 +156,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
     kind: "hit" | "miss" | "timeout";
     text: string;
   } | null>(null);
+  const [ruleJustSwitched, setRuleJustSwitched] = useState(false);
 
   const stateRef = useRef({
     playing: false,
@@ -263,14 +265,23 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
   const advanceTrial = useCallback(
     (currentPlan: Scene2Plan) => {
       const st = stateRef.current;
+      const prevRule = currentPlan.trials[st.trialIdx]?.rule;
       const nextIdx = (st.trialIdx + 1) % currentPlan.trials.length;
+      const nextTrial = currentPlan.trials[nextIdx];
+      const switched = Boolean(prevRule && nextTrial && prevRule !== nextTrial.rule);
+
       st.trialIdx = nextIdx;
       st.trialStartMs = performance.now();
       setTrialIdx(nextIdx);
       setTrialProgress(0);
-      speakDistractor(currentPlan.trials[nextIdx]);
+      setRuleJustSwitched(switched);
+
+      if (switched && settings.sound_fx_enabled) {
+        soundFx.playTargetLock(0.32);
+      }
+      speakDistractor(nextTrial);
     },
-    [speakDistractor]
+    [settings.sound_fx_enabled, speakDistractor]
   );
 
   const handleAnswer = useCallback(
@@ -297,10 +308,11 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
         st.combo = 0;
         setWrong(st.wrong);
         setCombo(0);
+        const ruleHint = currentTrial.rule === "ink" ? "看颜色" : "看字义";
         setFeedback({
           id: Date.now(),
           kind: "miss",
-          text: `应选「${COLOR_STYLES[currentTrial.answer_key].label}」`,
+          text: `上题${ruleHint}，应选「${COLOR_STYLES[currentTrial.answer_key].label}」`,
         });
         if (settings.sound_fx_enabled) soundFx.playErrorBuzz(0.38);
       }
@@ -419,6 +431,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
       setMaxCombo(0);
       setAvgRtMs(0);
       setFeedback(null);
+      setRuleJustSwitched(false);
       setIsPlaying(true);
 
       if (settings.sound_fx_enabled) soundFx.playResumeChime(0.4);
@@ -433,10 +446,18 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
     const totalAnswered = correct + wrong;
     const acc = totalAnswered > 0 ? Math.round((correct / totalAnswered) * 100) : 100;
     const inkStyle = COLOR_STYLES[trial.ink_key];
+    const isInkRule = trial.rule === "ink";
 
     return (
       <div className="h-full w-full flex flex-col bg-[#060914] relative overflow-hidden select-none">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_38%,rgba(192,132,252,0.14),transparent_55%)] pointer-events-none" />
+        {/* Dynamic full-stage ambient glow shifts strongly between Ink (Fuchsia) & Word (Cyan) */}
+        <div
+          className={`absolute inset-0 pointer-events-none transition-all duration-300 ${
+            isInkRule
+              ? "bg-[radial-gradient(circle_at_50%_42%,rgba(217,70,239,0.22),transparent_58%)]"
+              : "bg-[radial-gradient(circle_at_50%_42%,rgba(34,211,238,0.22),transparent_58%)]"
+          }`}
+        />
 
         {/* Top HUD */}
         <header className="relative z-10 px-6 pt-5 pb-3">
@@ -456,9 +477,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
                 <span className="text-cyan-300 font-bold tabular-nums">
                   均速 {avgRtMs > 0 ? `${avgRtMs}ms` : "--"}
                 </span>
-                <span className="text-slate-400 tabular-nums">
-                  最高连击 {maxCombo}
-                </span>
+                <span className="text-slate-400 tabular-nums">最高连击 {maxCombo}</span>
               </div>
             </div>
 
@@ -471,64 +490,116 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
 
         {/* Center Word Stage */}
         <main className="relative z-10 flex-1 flex flex-col items-center justify-center px-6">
-          {/* Rule instruction badge */}
-          <div
-            className={`mb-5 inline-flex items-center gap-2 rounded-full px-5 py-1.5 text-xs font-extrabold tracking-wide border ${
-              trial.rule === "ink"
-                ? "bg-fuchsia-500/15 border-fuchsia-400/45 text-fuchsia-200"
-                : "bg-cyan-500/15 border-cyan-400/45 text-cyan-200"
-            }`}
-          >
-            <Zap className="w-3.5 h-3.5" />
-            <span>
-              {trial.rule === "ink"
-                ? "请选出【文字的实际颜色】（忽略字义！）"
-                : "请选出【文字的字面含义】（忽略颜色！）"}
-            </span>
-          </div>
+          {/* High-contrast Dual Rule Indicator (instant peripheral vision cue in Mixed Mode!) */}
+          {plan.mode === "mixed" && (
+            <div className="mb-4 grid grid-cols-2 gap-3 w-full max-w-md">
+              <div
+                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 border-2 font-black text-base transition-all duration-150 ${
+                  isInkRule
+                    ? "bg-fuchsia-500/25 border-fuchsia-400 text-fuchsia-100 scale-[1.04] shadow-[0_0_28px_-4px_rgba(217,70,239,0.75)]"
+                    : "bg-slate-900/50 border-slate-800 text-slate-600 opacity-45 scale-95"
+                }`}
+              >
+                <Palette className="w-5 h-5" />
+                <span>看颜色</span>
+              </div>
+              <div
+                className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-2.5 border-2 font-black text-base transition-all duration-150 ${
+                  !isInkRule
+                    ? "bg-cyan-500/25 border-cyan-400 text-cyan-100 scale-[1.04] shadow-[0_0_28px_-4px_rgba(34,211,238,0.75)]"
+                    : "bg-slate-900/50 border-slate-800 text-slate-600 opacity-45 scale-95"
+                }`}
+              >
+                <Type className="w-5 h-5" />
+                <span>看字义</span>
+              </div>
+            </div>
+          )}
 
-          {/* Dramatic Stroop Card */}
+          {/* Dramatic Stroop Card with Integrated Prominent Rule Header */}
           <div
             key={`${trial.seq}-${feedback?.kind === "miss" ? feedback.id : "ok"}`}
-            className={`relative w-full max-w-md rounded-3xl border bg-slate-900/90 backdrop-blur-xl px-8 py-12 text-center shadow-2xl ${
+            className={`relative w-full max-w-md rounded-3xl border-2 bg-slate-900/92 backdrop-blur-xl overflow-hidden text-center shadow-2xl transition-colors duration-150 ${
               feedback?.kind === "miss" || feedback?.kind === "timeout"
-                ? "border-rose-500/60 ui-shake"
-                : "border-slate-700/80"
+                ? "border-rose-500 ui-shake"
+                : isInkRule
+                  ? "border-fuchsia-400/75 shadow-[0_0_50px_-14px_rgba(217,70,239,0.55)]"
+                  : "border-cyan-400/75 shadow-[0_0_50px_-14px_rgba(34,211,238,0.55)]"
             }`}
           >
-            <div className={`text-[120px] leading-none font-black ui-cue-pop ${inkStyle.textClass}`}>
-              {trial.word_text}
-            </div>
+            {/* Unmistakable Rule Banner built right into the card top */}
+            <div
+              key={`rule-${trial.seq}`}
+              className={`px-5 py-3 flex items-center justify-between border-b ${
+                isInkRule
+                  ? "bg-gradient-to-r from-fuchsia-600/35 via-purple-600/30 to-fuchsia-600/35 border-fuchsia-400/35 text-fuchsia-100"
+                  : "bg-gradient-to-r from-cyan-600/35 via-sky-600/30 to-cyan-600/35 border-cyan-400/35 text-cyan-100"
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                {isInkRule ? (
+                  <Palette className="w-5 h-5 text-fuchsia-300 shrink-0" />
+                ) : (
+                  <Type className="w-5 h-5 text-cyan-300 shrink-0" />
+                )}
+                <span className="text-lg font-black tracking-wide">
+                  {isInkRule ? "选【文字颜色】" : "选【字面意思】"}
+                </span>
+              </div>
 
-            {/* Single-trial countdown fuse bar */}
-            <div className="mt-8 h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-fuchsia-400 via-cyan-400 to-amber-400 transition-[width] duration-75"
-                style={{ width: `${Math.max(0, (1 - trialProgress) * 100)}%` }}
-              />
-            </div>
-
-            {/* Instant micro feedback */}
-            <div className="mt-4 h-5 flex items-center justify-center text-xs font-bold">
-              {feedback && (
-                <span
-                  className={`inline-flex items-center gap-1.5 ${
-                    feedback.kind === "hit" ? "text-emerald-300" : "text-rose-400"
-                  }`}
-                >
-                  {feedback.kind === "hit" ? (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  ) : (
-                    <XCircle className="w-3.5 h-3.5" />
-                  )}
-                  {feedback.text}
+              {ruleJustSwitched ? (
+                <span className="ui-cue-pop inline-flex items-center gap-1 rounded-full bg-amber-400 text-slate-950 px-2.5 py-0.5 text-[11px] font-black shadow-[0_0_14px_rgba(251,191,36,0.8)]">
+                  <RefreshCw className="w-3 h-3" />
+                  规则切换!
+                </span>
+              ) : (
+                <span className="text-xs font-semibold opacity-80">
+                  {isInkRule ? "忽略字义" : "忽略颜色"}
                 </span>
               )}
+            </div>
+
+            <div className="px-8 pt-9 pb-7">
+              <div
+                className={`text-[124px] leading-none font-black ui-cue-pop ${inkStyle.textClass}`}
+              >
+                {trial.word_text}
+              </div>
+
+              {/* Single-trial countdown fuse bar */}
+              <div className="mt-8 h-2 w-full rounded-full bg-slate-800 overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-[width] duration-75 ${
+                    isInkRule
+                      ? "bg-gradient-to-r from-fuchsia-400 via-purple-400 to-pink-400"
+                      : "bg-gradient-to-r from-cyan-400 via-sky-400 to-emerald-400"
+                  }`}
+                  style={{ width: `${Math.max(0, (1 - trialProgress) * 100)}%` }}
+                />
+              </div>
+
+              {/* Instant micro feedback */}
+              <div className="mt-4 h-5 flex items-center justify-center text-xs font-bold">
+                {feedback && (
+                  <span
+                    className={`inline-flex items-center gap-1.5 ${
+                      feedback.kind === "hit" ? "text-emerald-300" : "text-rose-400"
+                    }`}
+                  >
+                    {feedback.kind === "hit" ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <XCircle className="w-3.5 h-3.5" />
+                    )}
+                    {feedback.text}
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 
           {/* 4 Uiverse Tactile Color Push Buttons */}
-          <div className="mt-8 w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <div className="mt-7 w-full max-w-2xl grid grid-cols-2 sm:grid-cols-4 gap-4">
             {COLOR_ORDER.map((c) => {
               const info = COLOR_STYLES[c];
               return (
@@ -548,7 +619,7 @@ export const Scene2StroopView: React.FC<Scene2StroopViewProps> = ({
             })}
           </div>
 
-          <div className="mt-5 text-xs text-slate-500 flex items-center gap-2">
+          <div className="mt-4 text-xs text-slate-500 flex items-center gap-2">
             <Keyboard className="w-3.5 h-3.5" />
             <span>支持键盘数字键 1-4 或 A / S / D / F 极速作答 · Esc 结束</span>
           </div>
