@@ -1,63 +1,113 @@
 # NeuroPulse · 灵动反应训练（桌面端）
 
-一款面向 **macOS** 与 **Windows 11** 的轻量级反应力与专注力训练桌面小游戏，采用 **下载即用、零外部依赖、全离线可用** 的独立桌面端架构。
-
-## 核心功能 — 场景 1：双物听觉反应 + 中途换手训练
-
-- **自定义双手物品**：用户输入左右手真实握持的两种物品名称（如 `红球 / 蓝球`、`水杯 / 手机`），支持一键对调与本地 SQLite 预设收藏。
-- **灵活可配置时长**：默认 **2 分钟（120 秒）**，提供快捷预设与任意秒数自定义（15 秒 ~ 30 分钟）。
-- **智能防连发随机播报**：Python 后端生成防长连发（最多连续 3 次同物品）且保持均衡的随机语音指令时间轴，支持自由调节播报节奏区间。
-- **中途随机播报「请换手」+ 5 秒倒计时**：
-  - 自动在训练中段随机穿插换手节点（避开首尾区间）。
-  - 语音清晰播报「请换手」后，**立即暂停主计时器并触发 5 秒（可配置 3~12 秒）倒计时（5 → 4 → 3 → 2 → 1）**，配套语音报数、滴答音效与 3D 物体交叉换位轨道动画。
-  - 倒计时结束后播报「继续」，自动翻转左右手状态并无缝恢复反应训练。
-- **双引擎离线语音播报**：内置浏览器原生 WebSpeech + Python 本地离线 WAV 合成引擎（macOS `say` / Windows 11 SAPI），无需联网或 API Key，下载即用。
-- **Three.js 3D 视觉舞台 & 纯盲听模式**：
-  - 实时 3D 双核脉冲特效 + 换手轨道互换动画 + 耳机左右声道提示音。
-  - 一键开启「纯盲听模式」，隐藏文字与 3D 高亮，纯粹依靠听觉训练反应。
-- **本地 SQLite 专注档案**：自动保存用户配置、自定义预设与全部 4 大场景的训练历史、评分及连续专注天数。
+一款面向 **macOS** 与 **Windows 11** 的轻量级反应力与专注力训练桌面小游戏，内置 **4 大专业认知与反应训练场景**，采用 **下载即用、零环境依赖、全离线可用** 的独立桌面端架构（Electron + React + Three.js + Python FastAPI + SQLite）。
 
 ## 全部 4 大训练场景
 
-| 场景 | 能力训练方向 | 核心玩法 |
+| 场景 | 能力训练方向 | 核心玩法与交互 |
 | --- | --- | --- |
-| **场景 1 · 双物听觉反应** | 听觉辨识 + 双手协同 | 自定义左右手物品名、防连发随机语音播报、中途播报「请换手」并触发 5 秒倒计时与 3D 轨道互换 |
-| **场景 2 · Stroop 色词抗干扰** | 前额叶专注与冲动抑制 | 高速色词冲突辨识，支持「经典认颜色 / 规则动态切换」双模式、语音听觉干扰与键盘 1-4 / A-S-D-F 极速作答 |
-| **场景 3 · 3D 多球视觉追踪 (MOT)** | 三维动态空间注意广度 | Three.js 实时三维物理弹性碰撞立方体，锁定目标光球后在三维空间内直接鼠标 Raycast 拾取 |
-| **场景 4 · 听觉 Go / No-Go 急停** | 毫秒级反应与冲动急停 | 自定义行动词 / 禁动干扰词，听到行动词拍击反应垫（或按 Space），听到禁动词瞬间急停克制 |
+| **场景 1 · 双物听觉反应** | 听觉辨识 + 双手协同 | 自定义左右手真实握持的两种物品（默认 `红球 / 蓝球`，支持收藏预设）；默认 2 分钟（15s~30min 可配）防连发随机语音播报；中途随机播报「请换手」后暂停主计时器并触发 **5 秒可视 + 听觉倒计时** 与 3D 物体交叉换位轨道动画；支持纯盲听模式与耳机左右声道联动。 |
+| **场景 2 · Stroop 色词抗干扰** | 前额叶专注与冲动抑制 | 高速闪现字义与颜色冲突的色词卡；支持「经典认颜色」与「色词混合动态切换」双模式、冲突比例（60%/80%/100%）、单题限时（3.0s/2.2s/1.4s）以及可选**语音听觉干扰**；支持鼠标点击 Uiverse 3D 彩色按钮或键盘 `1-4` / `A S D F` 极速作答。 |
+| **场景 3 · 3D 多球视觉追踪 (MOT)** | 三维空间注意广度 | 基于 Three.js 实时构建带深度网格的三维玻璃立方体；支持多球平滑三维弹性碰撞与防穿模排斥运动；完整包含「青色目标锁定 → 同色三维高速交错追踪 → 鼠标 3D Raycast 直接悬停点选 → 逐球揭晓」四阶段，支持动态镜头缓动视差与入门/标准/大师难度微调。 |
+| **场景 4 · 听觉 Go / No-Go 急停** | 毫秒级反应与冲动急停 | 支持自定义「行动词（如拍手、出拳）」与「禁动干扰词（如停、别动）」词库及主题预设；听到行动词即刻拍击 Uiverse 大圆反应垫（或按 `Space`/`Enter`），听到禁动词必须瞬间急停；实时区分并统计行动命中、漏击超时、成功急停克制、冲动误触与平均反应时。 |
 
-## 技术架构
+## 核心亮点
 
-| 层级 | 技术栈 |
+- **双引擎离线语音播报**：内置浏览器 Web Speech 与 Python 本地原生离线 WAV 合成引擎（macOS `say` / Windows 11 PowerShell SAPI）并带内存预热缓存，无需联网或配置任何 API Key。
+- **Uiverse.io 风格拟物微交互 + Three.js 3D 舞台**：3D 物理按压按钮、发光输入框、弹性开关、毛玻璃卡片、换手雷达光环与 Web Audio API 实时合成提示音效。
+- **本地 SQLite 专注档案**：零配置 WAL 模式数据库，自动持久化用户设置、物品预设以及全部 4 大场景的训练得分、反应速度、命中率、连续专注天数与近 7 天活跃图表，支持按场景筛选与历史配置复现。
+- **跨平台桌面独立分发**：通过 PyInstaller 将 Python 后端打包为免环境 Sidecar 随 Electron 一起封装；启动时自动分配空闲本地端口、绕过系统代理直连 `127.0.0.1`，关闭时自动清理后台进程。
+
+## 技术栈
+
+| 层级 | 技术选型 |
 | --- | --- |
-| 桌面壳与打包 | Electron 35 + electron-builder（macOS `.dmg`/`.zip` + Windows 11 `.exe` 安装包/便携版） |
-| 前端界面 | React 19 + TypeScript + Vite 6 + TailwindCSS v4 + Uiverse.io 风格拟物微交互组件 |
-| 3D 动效 | Three.js 实时渲染舞台（支持开关与 WebGL 优雅降级） |
-| 本地后端 | Python 3.13 + FastAPI + Uvicorn（通过 PyInstaller 打包为免环境单文件 Sidecar） |
-| 本地数据库 | SQLite（零配置 WAL 模式，数据自动存放在系统应用数据目录） |
+| 桌面端与打包 | Electron 35 + electron-builder（macOS `.dmg`/`.zip` + Windows 11 NSIS `.exe`/便携版） |
+| 前端界面 | React 19 + TypeScript 5 + Vite 6 + TailwindCSS v4 + Uiverse 风格 CSS 组件库 |
+| 3D 引擎与音效 | Three.js（实时双核舞台 + 3D MOT 物理碰撞与 Raycaster 拾取）+ Web Audio API |
+| 本地后端 | Python 3.13 + FastAPI + Uvicorn + Pydantic v2 + PyInstaller (`onedir` 极速启动 Sidecar) |
+| 本地数据库 | SQLite3（内置零安装，支持无损在线表结构迁移，存放于系统 `userData` 目录） |
 
-## 快速开发运行
+## 目录结构
+
+```text
+.
+├── electron/                     # Electron 主进程（Python Sidecar 生命周期、动态端口）与 Preload 桥接
+├── frontend/                     # React + TailwindCSS + Three.js 前端工程
+│   └── src/
+│       ├── components/           # Three.js 舞台、3D MOT 引擎、换手倒计时遮罩、Uiverse 控件与侧边栏
+│       ├── services/             # Typed API 客户端、双引擎语音播报、Web Audio 音效合成
+│       ├── styles/               # Tailwind 入口与 Uiverse 拟物微交互样式库
+│       └── views/                # 场景 1~4 页面、训练场景库、结算弹窗与多场景统计档案
+├── backend/                      # Python FastAPI + SQLite 本地服务
+│   ├── app/                      # database.py / scheduler.py / tts_service.py / routes.py / schemas.py
+│   ├── tests/                    # Pytest 自动化接口与规则测试
+│   └── neuropulse_backend.spec   # PyInstaller 独立可执行文件打包配置
+├── scripts/                      # 开发联调启动器 (dev.mjs) 与后端打包脚本 (build-backend.mjs)
+├── build-resources/              # 应用图标与构建期生成的独立 Python Sidecar
+├── electron-builder.yml          # macOS 与 Windows 11 桌面安装包配置
+└── .github/workflows/release.yml # GitHub Actions 双端自动构建工作流
+```
+
+## 本地后端 REST API 概览
+
+| 接口 | 说明 |
+| --- | --- |
+| `GET /health` | 健康检查、平台与离线原生语音状态 |
+| `GET / PUT /api/settings` | 读取 / 保存场景 1 偏好与语音参数 |
+| `GET / POST / DELETE /api/presets` | 管理自定义双物预设组合 |
+| `POST /api/scene1/plan` | 生成场景 1 防连发随机播报与换手时间轴 |
+| `POST /api/scene2/plan` | 生成场景 2 Stroop 色词冲突题库 |
+| `POST /api/scene4/plan` | 生成场景 4 Go / No-Go 急停播报时间轴 |
+| `GET / POST / DELETE /api/sessions` | 读取（支持 `scene_id` 筛选）、保存与删除训练记录 |
+| `GET /api/stats` | 汇总连续专注天数、累计时长、事件总数与近 7 天活跃数据 |
+| `POST /api/tts/synthesize` & `/api/tts/prewarm` | 原生离线 WAV 语音合成与批量缓存预热 |
+
+## 开发、测试与打包
+
+### 1. 环境初始化
 
 ```bash
-# 1. 安装前端与桌面端依赖
+# 安装根目录与前端依赖
 pnpm run install:all
 
-# 2. 创建 Python 虚拟环境并安装依赖
+# 创建 Python 虚拟环境并安装依赖（推荐 Python 3.11 ~ 3.13）
 python3 -m venv backend/.venv
 backend/.venv/bin/pip install -r backend/requirements.txt
+```
 
-# 3. 一键启动（Python 后端 + Vite 前端 + Electron 桌面端）
+### 2. 一键开发联调
+
+```bash
+# 同时启动 Python 后端 + Vite 热更新前端 + Electron 桌面窗口
 pnpm run dev
 ```
 
-## 打包独立桌面安装包（用户下载后直接运行）
+### 3. 运行验证测试与编译检查
 
 ```bash
-# macOS (生成 .dmg 与 .zip，内置独立 Python 后端可执行文件)
+# Python 后端单元测试（7 项测试覆盖 4 大场景调度、SQLite 持久化与原生 TTS）
+cd backend && .venv/bin/pytest -v
+
+# 前端 TypeScript + Vite 构建 + Electron 主进程编译
+pnpm run build
+```
+
+### 4. 打包独立桌面安装包（用户下载即用）
+
+```bash
+# macOS：构建前端 + Python Sidecar + 输出 release/*.dmg 与 *.zip
 pnpm run dist:mac
 
-# Windows 11 (在 Windows 11 环境运行，生成 NSIS 安装程序与免安装便携版 .exe)
+# Windows 11（在 Win11 环境执行）：输出 release/*.exe（NSIS 安装程序与免安装便携版）
 pnpm run dist:win
 ```
 
-也可直接通过仓库内置的 `.github/workflows/release.yml` 在 GitHub Actions 上一键同时构建 macOS 与 Windows 11 双端安装包。
+推送 `v*` 标签（如 `git tag v1.1.0 && git push origin v1.1.0`）或在 GitHub Actions 手动触发 [release.yml](file:///Volumes/person/person_code/tool_game/.github/workflows/release.yml) 即可自动产出 macOS 与 Windows 11 双端安装包。
+
+## 快捷键一览
+
+- **场景 1（双物反应）**：`Space` 暂停 / 继续，`Esc` 提前结束并结算
+- **场景 2（Stroop）**：`1 / 2 / 3 / 4` 或 `A / S / D / F` 快速选色，`Esc` 结束挑战
+- **场景 3（3D 追踪）**：鼠标左键直接点选 3D 光球，`Enter` 确认锁定答案，`Esc` 结束追踪
+- **场景 4（Go / No-Go）**：`Space` / `Enter` 或点击大圆按钮毫秒拍击，`Esc` 结束训练

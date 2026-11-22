@@ -152,7 +152,11 @@ export const HistoryView: React.FC<HistoryViewProps> = ({
               return (
                 <div key={day.date} className="flex flex-col items-center h-full justify-end gap-2">
                   <div className="text-[10px] text-slate-400 tabular-nums">
-                    {day.duration_sec > 0 ? `${Math.round(day.duration_sec / 60)}m` : ""}
+                    {day.duration_sec >= 60
+                      ? `${Math.round(day.duration_sec / 60)}m`
+                      : day.duration_sec > 0
+                        ? `${day.duration_sec}s`
+                        : ""}
                   </div>
                   <div className="w-full max-w-[44px] flex-1 flex items-end">
                     <div

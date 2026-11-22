@@ -14,7 +14,7 @@ from app.tts_service import NativeTtsService
 def create_app(db_path: Path | str | None = None) -> FastAPI:
     app = FastAPI(
         title="NeuroPulse Focus Backend",
-        version="1.0.0",
+        version="1.1.0",
         docs_url="/docs",
         redoc_url=None,
     )

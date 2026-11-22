@@ -271,14 +271,17 @@ export const App: React.FC = () => {
       const [st, list] = await Promise.all([api.getStats(), api.listSessions(60)]);
       setStats(st);
       setSessions(list);
-    } catch {
+    } catch (err) {
+      showToast(
+        `本地记录保存失败：${err instanceof Error ? err.message : "请检查本地后端服务"}`
+      );
       setSummarySession({
         ...payload,
         id: Date.now(),
         focus_score: payload.focus_score_override ?? (payload.completed ? 95 : 75),
       });
     }
-  }, []);
+  }, [showToast]);
 
   const handleDeleteSession = useCallback(
     async (sessionId: number) => {
